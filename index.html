@@ -26,10 +26,8 @@
     /* Stili Bottoni */
     button.primary {background:linear-gradient(45deg, #6a1b9a, #8e24aa);color:white;box-shadow: 0 4px 15px rgba(106, 27, 154, 0.4);}
     button.secondary {background:linear-gradient(45deg, #880e4f, #ad1457);color:white;box-shadow: 0 4px 15px rgba(136, 14, 79, 0.4);}
-    
     button.tertiary {background: #333; color: #ccc; border: 1px dashed #555;}
     button.tertiary:hover {background: #444; color: #fff; border-color: #777;}
-
     button.ghost {background: transparent; border: 1px solid #444; color: #aaa;}
     
     /* Calendar Grid */
@@ -47,21 +45,29 @@
     /* Stati (Colori Sfondo) */
     .casa-cicci {background:#4a148c; border-color: #7c43bd;} 
     .casa-cucci {background:#880e4f; border-color: #c2185b;} 
+    
+    /* Nuovi Luoghi */
+    .separati {background:#050505; border: 1px solid #333; color: #888;} /* Nero quasi totale */
+    .fuori {background:#ef6c00; border-color: #e65100; color: #fff;} /* Arancione */
+
     .da-decidere {background: #2a2a2a; border: 2px dashed #666; color: #ddd;}
     .missed {opacity: 0.4; background: #333 !important; border: 1px dashed #777 !important; color: #888;}
+
+    /* Speciale Azzurro (Solo se vuoto o da decidere) */
+    .speciale-blue {
+        background: #039be5 !important; /* Azzurro */
+        border-color: #0288d1 !important;
+        color: #fff !important;
+        box-shadow: inset 0 0 10px rgba(255,255,255,0.3);
+    }
     
     .time {font-size:10px; background: rgba(0,0,0,0.4); padding: 2px 4px; border-radius: 4px; margin-top: 2px;}
-    
-    /* ICONE */
     .icons-container {display: flex; gap: 4px; position: absolute; bottom: 4px; right: 4px;}
     .icon-badge {font-size: 10px;}
     
-    /* Nuova Stellina Speciale (Alto Sinistra) */
+    /* Stellina Speciale */
     .special-star {
-        position: absolute;
-        top: 2px;
-        left: 3px;
-        font-size: 10px;
+        position: absolute; top: 2px; left: 3px; font-size: 10px;
         text-shadow: 0 0 3px rgba(255,215,0, 0.8);
     }
 
@@ -75,35 +81,19 @@
     .place-btn {flex: 1; opacity: 0.5; border: 2px solid transparent; font-size: 14px; padding: 12px; margin-bottom: 0;}
     .place-btn.active {opacity: 1; border-color: #fff; transform: scale(1.02);}
     
-    /* Bottone Toggle Speciale (Giallo/Oro quando attivo) */
+    /* Toggle Speciale */
     #btn-speciale {
-        width: 100%; 
-        background: #333; /* Default spento */
-        border: 1px solid #555;
-        color: #aaa; 
-        margin-bottom: 10px;
+        width: 100%; background: #333; border: 1px solid #555; color: #aaa; margin-bottom: 10px;
     }
     #btn-speciale.active {
-        background: #ffd700; /* Oro */
-        color: #000; /* Testo nero per contrasto */
-        border-color: #fff;
+        background: #ffd700; color: #000; border-color: #fff;
         box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
     }
 
-    /* Bottone "Da Decidere" */
-    #btn-decidere {
-        width: 100%; 
-        background: #2a2a2a; 
-        border: 1px dashed #666; 
-        color: #aaa; 
-        opacity: 0.7;
-        margin-bottom: 20px; 
-    }
-    #btn-decidere.active {
-        opacity: 1; border: 1px solid #fff; background: #333; color: #fff;
-    }
+    #btn-decidere {width: 100%; background: #2a2a2a; border: 1px dashed #666; color: #aaa; opacity: 0.7; margin-bottom: 20px;}
+    #btn-decidere.active {opacity: 1; border: 1px solid #fff; background: #333; color: #fff;}
 
-    .stats {font-size:12px; margin-top:20px; padding-top:15px; border-top: 1px solid #333; display: flex; flex-wrap: wrap; justify-content: space-around; gap: 5px; color: #bbb;}
+    .stats {font-size:11px; margin-top:20px; padding-top:15px; border-top: 1px solid #333; display: flex; flex-wrap: wrap; justify-content: space-around; gap: 8px; color: #bbb;}
     .label {font-size: 12px; display: block; text-align: left; margin-bottom: 4px; color: #aaa; margin-top: 15px;}
     
     /* Foto Preview */
@@ -151,8 +141,13 @@
         <label class="label" style="margin-top: 0;">Dove dormiamo?</label>
         
         <div class="place-row">
-            <button id="btn-cicci" class="place-btn" style="background:#4a148c; color:white;" onclick="setPlace('casa-cicci')">Cicci</button>
-            <button id="btn-cucci" class="place-btn" style="background:#880e4f; color:white;" onclick="setPlace('casa-cucci')">Cucci</button>
+            <button id="btn-cicci" class="place-btn" style="background:#4a148c; color:white;" onclick="setPlace('casa-cicci')">💜 Cicci</button>
+            <button id="btn-cucci" class="place-btn" style="background:#880e4f; color:white;" onclick="setPlace('casa-cucci')">🍷 Cucci</button>
+        </div>
+
+        <div class="place-row">
+            <button id="btn-separati" class="place-btn" style="background:#000; color:#888; border-color:#333;" onclick="setPlace('separati')">💔 Separati</button>
+            <button id="btn-fuori" class="place-btn" style="background:#ef6c00; color:white;" onclick="setPlace('fuori')">⛺ Fuori</button>
         </div>
 
         <button id="btn-speciale" onclick="toggleSpecial()">✨ Speciale (⭐)</button>
@@ -207,68 +202,58 @@
     let current=new Date();
     let selectedDate=null;
     let tempPlace=null;
-    let tempSpecial=false; // Nuova variabile per lo stato speciale
+    let tempSpecial=false; 
     let fileToUpload=null;
 
-    // ---------------- AUTH ----------------
     auth.onAuthStateChanged(user=>{
-        if(user){ 
-            document.getElementById('login').style.display='none'; 
-            document.getElementById('main').style.display='block'; 
-            initializeMonth(); 
-        }
+        if(user){ document.getElementById('login').style.display='none'; document.getElementById('main').style.display='block'; initializeMonth(); }
     });
 
     function login(){
         const emailVal=document.getElementById('email').value;
         const passwordVal=document.getElementById('password').value;
         if(!emailVal || !passwordVal){ alert("Dati mancanti!"); return; }
-
-        auth.signInWithEmailAndPassword(emailVal,passwordVal)
-            .catch(()=> auth.createUserWithEmailAndPassword(emailVal,passwordVal)
-            .catch(err=>alert(err.message)));
+        auth.signInWithEmailAndPassword(emailVal,passwordVal).catch(()=> auth.createUserWithEmailAndPassword(emailVal,passwordVal).catch(err=>alert(err.message)));
     }
 
-    // ---------------- CALENDAR RENDER ----------------
+    // ---------------- RENDER ----------------
     function render(dataFromFirebase=null){
         const cal=document.getElementById('calendar'); cal.innerHTML='';
         const y=current.getFullYear(), m=current.getMonth();
-        
-        const monthName = current.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
-        document.getElementById('month').textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+        document.getElementById('month').textContent = current.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
 
         ['L','M','M','G','V','S','D'].forEach(d=>{let e=document.createElement('div'); e.textContent=d; e.className='day-name'; cal.appendChild(e);});
-        
-        const first=new Date(y,m,1).getDay()||7; 
-        for(let i=1;i<first;i++) cal.appendChild(document.createElement('div'));
-        
+        const first=new Date(y,m,1).getDay()||7; for(let i=1;i<first;i++) cal.appendChild(document.createElement('div'));
         const days=new Date(y,m+1,0).getDate();
         
         for(let d=1;d<=days;d++){
             const key=`${y}-${m+1}-${d}`;
-            const el=document.createElement('div'); 
-            el.className='day'; 
-            el.innerHTML = `<strong>${d}</strong>`;
-            el.onclick=()=>openModal(key);
+            const el=document.createElement('div'); el.className='day'; el.innerHTML = `<strong>${d}</strong>`; el.onclick=()=>openModal(key);
             
             if(dataFromFirebase && dataFromFirebase[key]){
                 const data=dataFromFirebase[key];
                 
-                if(data.missed) el.classList.add('missed');
-                else if(data.place && data.place !== 'speciale') el.classList.add(data.place);
-                // Retrocompatibilità: se c'era "speciale" come place, mostralo, ma idealmente convertiremo
-                else if(data.place === 'speciale') el.classList.add('speciale-legacy'); // O gestisci come vuoi
-
-                // Stella per il giorno speciale
-                if(data.isSpecial) {
-                    el.innerHTML += '<span class="special-star">⭐</span>';
+                if(data.missed) {
+                    el.classList.add('missed');
+                } else {
+                    // Logica combinata: Speciale + Luogo
+                    if(data.isSpecial) {
+                        // Se c'è un luogo specifico (Cicci/Cucci/Separati/Fuori), usa quello e aggiungi la stella
+                        if(data.place && data.place !== 'da-decidere') {
+                            el.classList.add(data.place);
+                        } else {
+                            // Se è vuoto o da decidere, diventa Azzurro
+                            el.classList.add('speciale-blue');
+                        }
+                        el.innerHTML += '<span class="special-star">⭐</span>';
+                    } else {
+                        // Se non è speciale, usa il colore normale
+                        if(data.place) el.classList.add(data.place);
+                    }
                 }
+
+                if(!data.missed && data.start && data.end) el.innerHTML+=`<div class='time'>${data.start}-${data.end}</div>`;
                 
-                if(!data.missed && data.start && data.end){
-                    el.innerHTML+=`<div class='time'>${data.start}-${data.end}</div>`;
-                }
-
-                // Icone per Descrizione (Nota) e Foto
                 let iconsHtml = '<div class="icons-container">';
                 if(data.note && data.note.trim() !== "") iconsHtml += '<span class="icon-badge">📝</span>';
                 if(data.photoUrl) iconsHtml += '<span class="icon-badge">📷</span>';
@@ -280,18 +265,15 @@
         updateStats();
     }
 
-    // ---------------- MODAL LOGIC ----------------
+    // ---------------- MODAL ----------------
     function openModal(date){ 
-        selectedDate=date; 
-        tempPlace=null; 
-        tempSpecial=false; // Reset
-        fileToUpload=null;
+        selectedDate=date; tempPlace=null; tempSpecial=false; fileToUpload=null;
         
         const parts = date.split('-');
         const dateObj = new Date(parts[0], parts[1]-1, parts[2]);
         document.getElementById('modalDate').textContent = dateObj.toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'long'});
         
-        // Reset Fields
+        // Reset
         document.getElementById('startTime').value = '';
         document.getElementById('endTime').value = '';
         document.getElementById('noteText').value = '';
@@ -302,24 +284,16 @@
         document.getElementById('saveBtn').textContent = "Salva";
         document.getElementById('saveBtn').disabled = false;
 
-        updatePlaceUI();
-        updateSpecialUI();
+        updatePlaceUI(); updateSpecialUI();
         
         db.collection('calendar').doc(date).get().then(doc => {
             if(doc.exists){
                 const data = doc.data();
                 if(data.place) setPlace(data.place);
-                
-                // Carica stato speciale
-                if(data.isSpecial) {
-                    tempSpecial = true;
-                    updateSpecialUI();
-                }
-
+                if(data.isSpecial) { tempSpecial = true; updateSpecialUI(); }
                 if(data.start) document.getElementById('startTime').value = data.start;
                 if(data.end) document.getElementById('endTime').value = data.end;
                 if(data.note) document.getElementById('noteText').value = data.note;
-                
                 if(data.photoUrl) {
                     document.getElementById('currentPhotoUrl').value = data.photoUrl;
                     document.getElementById('imgPreview').src = data.photoUrl;
@@ -327,49 +301,36 @@
                 }
             }
         });
-
         document.getElementById('modal').style.display='flex'; 
     }
 
     function closeModal(){ document.getElementById('modal').style.display='none'; }
-    
-    function setPlace(p){ 
-        tempPlace=p; 
-        updatePlaceUI(); 
-    }
-
-    function toggleSpecial(){
-        tempSpecial = !tempSpecial;
-        updateSpecialUI();
-    }
+    function setPlace(p){ tempPlace=p; updatePlaceUI(); }
+    function toggleSpecial(){ tempSpecial = !tempSpecial; updateSpecialUI(); }
 
     function updateSpecialUI(){
         const btn = document.getElementById('btn-speciale');
-        if(tempSpecial) btn.classList.add('active');
-        else btn.classList.remove('active');
+        if(tempSpecial) btn.classList.add('active'); else btn.classList.remove('active');
     }
 
     function updatePlaceUI(){
-        document.getElementById('btn-cicci').classList.remove('active');
-        document.getElementById('btn-cucci').classList.remove('active');
-        document.getElementById('btn-decidere').classList.remove('active');
-        
+        ['btn-cicci','btn-cucci','btn-separati','btn-fuori','btn-decidere'].forEach(id=>document.getElementById(id).classList.remove('active'));
         if(tempPlace === 'casa-cicci') document.getElementById('btn-cicci').classList.add('active');
         if(tempPlace === 'casa-cucci') document.getElementById('btn-cucci').classList.add('active');
+        if(tempPlace === 'separati') document.getElementById('btn-separati').classList.add('active');
+        if(tempPlace === 'fuori') document.getElementById('btn-fuori').classList.add('active');
         if(tempPlace === 'da-decidere') document.getElementById('btn-decidere').classList.add('active');
     }
 
-    // ---------------- FOTO & UPLOAD (GITHUB) ----------------
+    // ---------------- UPLOAD & SAVE ----------------
     function previewFile() {
         const file = document.getElementById('photoInput').files[0];
-        const preview = document.getElementById('imgPreview');
-        
         if (file) {
             fileToUpload = file;
             const reader = new FileReader();
             reader.onload = function(e){
-                preview.src = e.target.result;
-                preview.style.display = 'block';
+                document.getElementById('imgPreview').src = e.target.result;
+                document.getElementById('imgPreview').style.display = 'block';
             }
             reader.readAsDataURL(file);
         }
@@ -382,192 +343,133 @@
                 const base64Content = reader.result.split(',')[1]; 
                 const fileName = `photos/${selectedDate}-${Date.now()}.jpg`;
                 const url = `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${fileName}`;
-                
                 try {
                     const res = await fetch(url, {
                         method: 'PUT',
-                        headers: {
-                            'Authorization': `Bearer ${GH_TOKEN}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            message: `Upload foto ${selectedDate}`,
-                            content: base64Content
-                        })
+                        headers: {'Authorization': `Bearer ${GH_TOKEN}`, 'Content-Type': 'application/json'},
+                        body: JSON.stringify({message: `Upload ${selectedDate}`, content: base64Content})
                     });
                     const json = await res.json();
-                    
-                    if(!res.ok) throw new Error(json.message || "Errore upload");
-
-                    if(json.content && json.content.download_url) {
-                        resolve(json.content.download_url);
-                    } else {
-                        resolve(`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${fileName}`);
-                    }
-                } catch(e) {
-                    console.error(e);
-                    alert("Errore upload GitHub: " + e.message);
-                    resolve(null);
-                }
+                    if(!res.ok) throw new Error(json.message);
+                    resolve(json.content?.download_url || `https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${fileName}`);
+                } catch(e) { alert("Err GitHub: " + e.message); resolve(null); }
             };
             reader.readAsDataURL(file);
         });
     }
 
     async function saveDay(){
-        const btn = document.getElementById('saveBtn');
-        btn.textContent = "Salvataggio...";
-        btn.disabled = true;
-
+        const btn = document.getElementById('saveBtn'); btn.textContent = "Salvataggio..."; btn.disabled = true;
         let finalPhotoUrl = document.getElementById('currentPhotoUrl').value;
 
         if(fileToUpload) {
-            btn.textContent = "Caricamento foto su GitHub...";
+            btn.textContent = "Upload foto...";
             const uploadedUrl = await uploadToGitHub(fileToUpload);
-            if(uploadedUrl) finalPhotoUrl = uploadedUrl;
-            else {
-                btn.textContent = "Errore Upload";
-                btn.disabled = false;
-                return; 
-            }
+            if(uploadedUrl) finalPhotoUrl = uploadedUrl; else { btn.textContent = "Errore Upload"; btn.disabled = false; return; }
         }
-
-        const s = document.getElementById('startTime').value;
-        const e = document.getElementById('endTime').value;
-        const n = document.getElementById('noteText').value;
 
         db.collection('calendar').doc(selectedDate).set({
             place: tempPlace || null,
-            isSpecial: tempSpecial, // SALVA IL NUOVO STATO
-            start: s || "", 
-            end: e || "",
-            note: n || "",
+            isSpecial: tempSpecial,
+            start: document.getElementById('startTime').value || "", 
+            end: document.getElementById('endTime').value || "",
+            note: document.getElementById('noteText').value || "",
             photoUrl: finalPhotoUrl || null,
             missed: false
-        }).then(() => {
-            closeModal();
-            btn.textContent = "Salva";
-            btn.disabled = false;
-        });
+        }).then(() => { closeModal(); btn.textContent = "Salva"; btn.disabled = false; });
     }
 
     function markAsMissedSingle() {
         if(confirm("Segna come 'Saltato'?")) {
-            db.collection('calendar').doc(selectedDate).update({
-                missed: true, place: null, start:"", end:"", isSpecial: false
-            }).then(closeModal);
+            db.collection('calendar').doc(selectedDate).update({missed: true, place: null, start:"", end:"", isSpecial: false}).then(closeModal);
         }
     }
 
-    // ---------------- LOGICHE AVANZATE ----------------
+    // ---------------- SMART TOOLS ----------------
     function forceBalanceMonth(){
         if(!confirm("Riscrivi mese alternato (1 notte a testa)?")) return;
         const y=current.getFullYear(), m=current.getMonth();
         const days=new Date(y,m+1,0).getDate();
         const batch = db.batch();
-
         for(let d=1; d<=days; d++){
             const key=`${y}-${m+1}-${d}`;
             const place = (d % 2 !== 0) ? 'casa-cicci' : 'casa-cucci';
-            const ref = db.collection('calendar').doc(key);
-            batch.set(ref, { place: place, missed: false }, {merge: true}); 
+            batch.set(db.collection('calendar').doc(key), { place: place, missed: false }, {merge: true}); 
         }
-        batch.commit().then(() => alert("Calendario bilanciato!"));
+        batch.commit().then(() => alert("Fatto!"));
     }
 
     function shiftScheduleFromToday(){
         const today = new Date();
         const todayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
-
-        if(!confirm("Segnare OGGI saltato e slittare tutto il futuro?")) return;
+        if(!confirm("Slittare tutto da OGGI in poi?")) return;
 
         db.collection('calendar').orderBy(firebase.firestore.FieldPath.documentId()).get().then(snap => {
-            const updates = {};
-            let foundToday = false;
-            let previousData = null;
-
+            const updates = {}; let foundToday = false; let previousData = null;
             snap.docs.forEach((doc) => {
                 const key = doc.id;
                 if (key === todayKey) {
-                    foundToday = true;
-                    previousData = doc.data(); 
+                    foundToday = true; previousData = doc.data(); 
                     updates[key] = { ...previousData, missed: true, place: null, start: "", end: "" };
-                } 
-                else if (foundToday) {
+                } else if (foundToday) {
                     const currentData = doc.data();
-                    if (previousData) {
-                        updates[key] = { ...previousData, missed: false };
-                    }
+                    if (previousData) updates[key] = { ...previousData, missed: false };
                     previousData = currentData;
                 }
             });
-
-            const batch = db.batch();
-            Object.keys(updates).forEach(k => {
-                batch.set(db.collection('calendar').doc(k), updates[k]);
-            });
+            const batch = db.batch(); Object.keys(updates).forEach(k => batch.set(db.collection('calendar').doc(k), updates[k]));
             return batch.commit();
-        }).then(() => alert("Piani slittati!"));
+        }).then(() => alert("Slittato!"));
     }
 
     function setAllToDecide(){
-        if(!confirm("Vuoi impostare TUTTI i giorni di questo mese come 'Da Decidere'?")) return;
+        if(!confirm("Tutto 'Da Decidere'?")) return;
         const y=current.getFullYear(), m=current.getMonth();
         const days=new Date(y,m+1,0).getDate();
         const batch = db.batch();
-
         for(let d=1; d<=days; d++){
-            const key=`${y}-${m+1}-${d}`;
-            const ref = db.collection('calendar').doc(key);
-            batch.set(ref, { place: 'da-decidere', missed: false }, {merge: true});
+            batch.set(db.collection('calendar').doc(`${y}-${m+1}-${d}`), { place: 'da-decidere', missed: false }, {merge: true});
         }
-        batch.commit().then(() => alert("Tutto il mese impostato su 'Da Decidere'!"));
+        batch.commit().then(() => alert("Fatto!"));
     }
 
     function resetMonthColors(){
-        if(!confirm("⚠️ ATTENZIONE: Vuoi rimuovere tutti i colori/luoghi? Note, Foto e Speciali rimarranno.")) return;
+        if(!confirm("Reset colori?")) return;
         const y=current.getFullYear(), m=current.getMonth();
         const days=new Date(y,m+1,0).getDate();
         const batch = db.batch();
-
         for(let d=1; d<=days; d++){
-            const key=`${y}-${m+1}-${d}`;
-            const ref = db.collection('calendar').doc(key);
-            batch.set(ref, { place: null, start: "", end: "", missed: false }, {merge: true});
+            batch.set(db.collection('calendar').doc(`${y}-${m+1}-${d}`), { place: null, start: "", end: "", missed: false }, {merge: true});
         }
-        batch.commit().then(() => alert("Colori resettati!"));
+        batch.commit().then(() => alert("Resettato!"));
     }
 
     // ---------------- UTILS ----------------
-    function initializeMonth(){
-        db.collection('calendar').onSnapshot(snapshot=>{
-            let data={};
-            snapshot.docs.forEach(doc=>{ data[doc.id]=doc.data(); });
-            render(data);
-        });
-    }
+    function initializeMonth(){ db.collection('calendar').onSnapshot(snap=>{ let d={}; snap.docs.forEach(doc=>{d[doc.id]=doc.data()}); render(d); }); }
     function changeMonth(n){ current.setMonth(current.getMonth()+n); initializeMonth(); }
     
     function updateStats(){ 
         const y=current.getFullYear(), m=current.getMonth();
         db.collection('calendar').get().then(snap=>{ 
-            let cicci=0, cucci=0, todecide=0, speciale=0; 
+            let cicci=0, cucci=0, todecide=0, speciale=0, separati=0, fuori=0; 
             snap.forEach(d=>{ 
                 const p = d.id.split('-');
                 if(parseInt(p[0])===y && parseInt(p[1])===m+1 && !d.data().missed){
                     if(d.data().place==='casa-cicci') cicci++; 
                     else if(d.data().place==='casa-cucci') cucci++; 
+                    else if(d.data().place==='separati') separati++;
+                    else if(d.data().place==='fuori') fuori++;
                     else if(d.data().place==='da-decidere') todecide++; 
-                    
-                    // Conta speciale indipendentemente dal luogo
                     if(d.data().isSpecial) speciale++;
                 }
             }); 
             document.getElementById('stats').innerHTML = `
                 <div>💜 Cicci: <strong>${cicci}</strong></div>
                 <div>🍷 Cucci: <strong>${cucci}</strong></div>
-                <div>🤔 Decidere: <strong>${todecide}</strong></div>
+                <div>💔 Separati: <strong>${separati}</strong></div>
+                <div>⛺ Fuori: <strong>${fuori}</strong></div>
                 <div>✨ Speciali: <strong>${speciale}</strong></div>
+                <div>🤔 Decidere: <strong>${todecide}</strong></div>
             `; 
         }); 
     }
