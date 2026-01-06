@@ -22,8 +22,14 @@
 
     button {font-weight: bold; transition: all 0.2s; cursor: pointer;}
     button:active {transform: scale(0.98);}
+    
+    /* Stili Bottoni */
     button.primary {background:linear-gradient(45deg, #6a1b9a, #8e24aa);color:white;box-shadow: 0 4px 15px rgba(106, 27, 154, 0.4);}
     button.secondary {background:linear-gradient(45deg, #880e4f, #ad1457);color:white;box-shadow: 0 4px 15px rgba(136, 14, 79, 0.4);}
+    
+    button.tertiary {background: #333; color: #ccc; border: 1px dashed #555;}
+    button.tertiary:hover {background: #444; color: #fff; border-color: #777;}
+
     button.ghost {background: transparent; border: 1px solid #444; color: #aaa;}
     
     /* Calendar Grid */
@@ -38,51 +44,50 @@
         border: 1px solid transparent; transition: background 0.2s; overflow: hidden;
     }
     
-    /* Stati (Colori nel Calendario) */
+    /* Stati (Colori Sfondo) */
     .casa-cicci {background:#4a148c; border-color: #7c43bd;} 
     .casa-cucci {background:#880e4f; border-color: #c2185b;} 
-    .speciale   {background:#1b5e20; border-color: #2e7d32;} 
-    
-    /* Stato "Da Decidere" */
-    .da-decidere {
-        background: #2a2a2a; 
-        border: 2px dashed #666; 
-        color: #ddd;
-    }
-
+    .da-decidere {background: #2a2a2a; border: 2px dashed #666; color: #ddd;}
     .missed {opacity: 0.4; background: #333 !important; border: 1px dashed #777 !important; color: #888;}
     
     .time {font-size:10px; background: rgba(0,0,0,0.4); padding: 2px 4px; border-radius: 4px; margin-top: 2px;}
     
-    /* Icone (Nota e Foto) */
-    .icons-container {
-        display: flex; gap: 4px; position: absolute; bottom: 4px; right: 4px;
-    }
+    /* ICONE */
+    .icons-container {display: flex; gap: 4px; position: absolute; bottom: 4px; right: 4px;}
     .icon-badge {font-size: 10px;}
+    
+    /* Nuova Stellina Speciale (Alto Sinistra) */
+    .special-star {
+        position: absolute;
+        top: 2px;
+        left: 3px;
+        font-size: 10px;
+        text-shadow: 0 0 3px rgba(255,215,0, 0.8);
+    }
 
     /* Modale */
     .modal {position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center; z-index: 100;}
     .modal-content {background:#222;padding:25px;border-radius:16px;width:90%;max-width:340px; text-align: center; border: 1px solid #444; max-height: 90vh; overflow-y: auto;}
     
-    /* STILE PULSANTI LUOGO */
+    /* STILE PULSANTI MODALE */
     .place-row {display: flex; gap: 10px; margin-bottom: 10px;} 
     
     .place-btn {flex: 1; opacity: 0.5; border: 2px solid transparent; font-size: 14px; padding: 12px; margin-bottom: 0;}
     .place-btn.active {opacity: 1; border-color: #fff; transform: scale(1.02);}
     
-    /* Bottone Speciale */
+    /* Bottone Toggle Speciale (Giallo/Oro quando attivo) */
     #btn-speciale {
         width: 100%; 
-        background: #1b5e20; 
-        border: 1px solid #2e7d32;
-        color: white; 
-        opacity: 0.6;
+        background: #333; /* Default spento */
+        border: 1px solid #555;
+        color: #aaa; 
         margin-bottom: 10px;
     }
     #btn-speciale.active {
-        opacity: 1; 
+        background: #ffd700; /* Oro */
+        color: #000; /* Testo nero per contrasto */
         border-color: #fff;
-        box-shadow: 0 0 10px rgba(46, 125, 50, 0.6);
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
     }
 
     /* Bottone "Da Decidere" */
@@ -95,10 +100,7 @@
         margin-bottom: 20px; 
     }
     #btn-decidere.active {
-        opacity: 1; 
-        border: 1px solid #fff; 
-        background: #333; 
-        color: #fff;
+        opacity: 1; border: 1px solid #fff; background: #333; color: #fff;
     }
 
     .stats {font-size:12px; margin-top:20px; padding-top:15px; border-top: 1px solid #333; display: flex; flex-wrap: wrap; justify-content: space-around; gap: 5px; color: #bbb;}
@@ -134,8 +136,8 @@
         <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
             <button class="primary" onclick="shiftScheduleFromToday()">😅 Oggi è saltato: Slitta tutto!</button>
             <button class="secondary" onclick="forceBalanceMonth()">⚖️ Riscrivi Mese (Alternanza)</button>
-            <button class="secondary" style="background: #444; color: #ddd; border: 1px dashed #777;" onclick="setAllToDecide()">🤔 Imposta Mese "Da Decidere"</button>
-            <button class="ghost" style="color: #ef5350; border-color: #ef5350;" onclick="resetMonthColors()">🗑️ Reset Colori Mese (Mantieni Foto/Note)</button>
+            <button class="tertiary" onclick="setAllToDecide()">🤔 Imposta Mese "Da Decidere"</button>
+            <button class="ghost" style="color: #ef5350; border-color: #ef5350; margin-top: 10px;" onclick="resetMonthColors()">🗑️ Reset Colori Mese (Mantieni Foto/Note)</button>
         </div>
         
         <div class="stats" id="stats"></div>
@@ -153,7 +155,7 @@
             <button id="btn-cucci" class="place-btn" style="background:#880e4f; color:white;" onclick="setPlace('casa-cucci')">Cucci</button>
         </div>
 
-        <button id="btn-speciale" onclick="setPlace('speciale')">✨ Speciale</button>
+        <button id="btn-speciale" onclick="toggleSpecial()">✨ Speciale (⭐)</button>
         
         <button id="btn-decidere" onclick="setPlace('da-decidere')">🤔 Da Decidere</button>
 
@@ -205,6 +207,7 @@
     let current=new Date();
     let selectedDate=null;
     let tempPlace=null;
+    let tempSpecial=false; // Nuova variabile per lo stato speciale
     let fileToUpload=null;
 
     // ---------------- AUTH ----------------
@@ -252,7 +255,14 @@
                 const data=dataFromFirebase[key];
                 
                 if(data.missed) el.classList.add('missed');
-                else if(data.place) el.classList.add(data.place);
+                else if(data.place && data.place !== 'speciale') el.classList.add(data.place);
+                // Retrocompatibilità: se c'era "speciale" come place, mostralo, ma idealmente convertiremo
+                else if(data.place === 'speciale') el.classList.add('speciale-legacy'); // O gestisci come vuoi
+
+                // Stella per il giorno speciale
+                if(data.isSpecial) {
+                    el.innerHTML += '<span class="special-star">⭐</span>';
+                }
                 
                 if(!data.missed && data.start && data.end){
                     el.innerHTML+=`<div class='time'>${data.start}-${data.end}</div>`;
@@ -274,6 +284,7 @@
     function openModal(date){ 
         selectedDate=date; 
         tempPlace=null; 
+        tempSpecial=false; // Reset
         fileToUpload=null;
         
         const parts = date.split('-');
@@ -292,11 +303,19 @@
         document.getElementById('saveBtn').disabled = false;
 
         updatePlaceUI();
+        updateSpecialUI();
         
         db.collection('calendar').doc(date).get().then(doc => {
             if(doc.exists){
                 const data = doc.data();
                 if(data.place) setPlace(data.place);
+                
+                // Carica stato speciale
+                if(data.isSpecial) {
+                    tempSpecial = true;
+                    updateSpecialUI();
+                }
+
                 if(data.start) document.getElementById('startTime').value = data.start;
                 if(data.end) document.getElementById('endTime').value = data.end;
                 if(data.note) document.getElementById('noteText').value = data.note;
@@ -313,17 +332,30 @@
     }
 
     function closeModal(){ document.getElementById('modal').style.display='none'; }
-    function setPlace(p){ tempPlace=p; updatePlaceUI(); }
+    
+    function setPlace(p){ 
+        tempPlace=p; 
+        updatePlaceUI(); 
+    }
+
+    function toggleSpecial(){
+        tempSpecial = !tempSpecial;
+        updateSpecialUI();
+    }
+
+    function updateSpecialUI(){
+        const btn = document.getElementById('btn-speciale');
+        if(tempSpecial) btn.classList.add('active');
+        else btn.classList.remove('active');
+    }
 
     function updatePlaceUI(){
         document.getElementById('btn-cicci').classList.remove('active');
         document.getElementById('btn-cucci').classList.remove('active');
-        document.getElementById('btn-speciale').classList.remove('active');
         document.getElementById('btn-decidere').classList.remove('active');
         
         if(tempPlace === 'casa-cicci') document.getElementById('btn-cicci').classList.add('active');
         if(tempPlace === 'casa-cucci') document.getElementById('btn-cucci').classList.add('active');
-        if(tempPlace === 'speciale') document.getElementById('btn-speciale').classList.add('active');
         if(tempPlace === 'da-decidere') document.getElementById('btn-decidere').classList.add('active');
     }
 
@@ -406,6 +438,7 @@
 
         db.collection('calendar').doc(selectedDate).set({
             place: tempPlace || null,
+            isSpecial: tempSpecial, // SALVA IL NUOVO STATO
             start: s || "", 
             end: e || "",
             note: n || "",
@@ -421,7 +454,7 @@
     function markAsMissedSingle() {
         if(confirm("Segna come 'Saltato'?")) {
             db.collection('calendar').doc(selectedDate).update({
-                missed: true, place: null, start:"", end:"" 
+                missed: true, place: null, start:"", end:"", isSpecial: false
             }).then(closeModal);
         }
     }
@@ -477,10 +510,8 @@
         }).then(() => alert("Piani slittati!"));
     }
 
-    // Funzione "Da Decidere" per tutto il mese
     function setAllToDecide(){
         if(!confirm("Vuoi impostare TUTTI i giorni di questo mese come 'Da Decidere'?")) return;
-
         const y=current.getFullYear(), m=current.getMonth();
         const days=new Date(y,m+1,0).getDate();
         const batch = db.batch();
@@ -488,20 +519,13 @@
         for(let d=1; d<=days; d++){
             const key=`${y}-${m+1}-${d}`;
             const ref = db.collection('calendar').doc(key);
-            // Impostiamo place su da-decidere, ma manteniamo note/foto con merge: true
-            batch.set(ref, {
-                place: 'da-decidere',
-                missed: false
-            }, {merge: true});
+            batch.set(ref, { place: 'da-decidere', missed: false }, {merge: true});
         }
-
         batch.commit().then(() => alert("Tutto il mese impostato su 'Da Decidere'!"));
     }
 
-    // Funzione Reset Colori
     function resetMonthColors(){
-        if(!confirm("⚠️ ATTENZIONE: Vuoi rimuovere tutti i colori/luoghi di questo mese? \n\nNote e Foto NON verranno cancellate.")) return;
-
+        if(!confirm("⚠️ ATTENZIONE: Vuoi rimuovere tutti i colori/luoghi? Note, Foto e Speciali rimarranno.")) return;
         const y=current.getFullYear(), m=current.getMonth();
         const days=new Date(y,m+1,0).getDate();
         const batch = db.batch();
@@ -509,15 +533,9 @@
         for(let d=1; d<=days; d++){
             const key=`${y}-${m+1}-${d}`;
             const ref = db.collection('calendar').doc(key);
-            batch.set(ref, {
-                place: null,
-                start: "",
-                end: "",
-                missed: false
-            }, {merge: true});
+            batch.set(ref, { place: null, start: "", end: "", missed: false }, {merge: true});
         }
-
-        batch.commit().then(() => alert("Colori del mese resettati!"));
+        batch.commit().then(() => alert("Colori resettati!"));
     }
 
     // ---------------- UTILS ----------------
@@ -539,15 +557,17 @@
                 if(parseInt(p[0])===y && parseInt(p[1])===m+1 && !d.data().missed){
                     if(d.data().place==='casa-cicci') cicci++; 
                     else if(d.data().place==='casa-cucci') cucci++; 
-                    else if(d.data().place==='speciale') speciale++;
                     else if(d.data().place==='da-decidere') todecide++; 
+                    
+                    // Conta speciale indipendentemente dal luogo
+                    if(d.data().isSpecial) speciale++;
                 }
             }); 
             document.getElementById('stats').innerHTML = `
                 <div>💜 Cicci: <strong>${cicci}</strong></div>
                 <div>🍷 Cucci: <strong>${cucci}</strong></div>
-                <div>✨ Speciale: <strong>${speciale}</strong></div>
                 <div>🤔 Decidere: <strong>${todecide}</strong></div>
+                <div>✨ Speciali: <strong>${speciale}</strong></div>
             `; 
         }); 
     }
