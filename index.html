@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Calendario di Coppia Avanzato</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 420px;
+      background: #1e1e1e;
+      border-radius: 14px;
+      padding: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+
+    h1 {
+      text-align: center;
+      margin: 5px 0 10px;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+    }
+
+    button {
+      background: #333;
+      color: white;
+      cursor: pointer;
+    }
+
+    button.primary { background: #6a1b9a; }
+    button.secondary { background: #7b1f35; }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-top: 10px;
+    }
+
+    .day-name {
+      text-align: center;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .day {
+      background: #2a2a2a;
+      text-align: center;
+      padding: 8px 0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .my-house { background: #4b1c6f; }
+    .her-house { background: #5b0f24; }
+    .missed { outline: 2px dashed #ff9800; }
+
+    .time {
+      font-size: 10px;
+      opacity: 0.9;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: #222;
+      padding: 15px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 300px;
+    }
+
+    .stats {
+      font-size: 13px;
+      margin-top: 10px;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <h1>💜 Calendario di Coppia</h1>
+
+  <!-- LOGIN -->
+  <div id="login">
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="login()">Accedi / Registrati</button>
+  </div>
+
+  <!-- APP -->
+  <div id="main" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <button onclick="changeMonth(-1)">◀</button>
+      <strong id="month"></strong>
+      <button onclick="changeMonth(1)">▶</button>
+    </div>
+
+    <div class="calendar" id="calendar"></div>
+
+    <button class="primary" onclick="autoReschedule()">😅 Non abbiamo seguito il calendario</button>
+
+    <div class="stats" id="stats"></div>
+  </div>
+</div>
+
+<!-- MODAL ORARI -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3 id="modalDate"></h3>
+    <button class="primary" onclick="setPlace('my-house')">Casa tua</button>
+    <button class="secondary" onclick="setPlace('her-house')">Casa sua</button>
+    <input type="time" id="startTime">
+    <input type="time" id="endTime">
+    <button onclick="saveDay()">Salva</button>
+    <button onclick="closeModal()">Annulla</button>
+  </div>
+</div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "INSERISCI_API_KEY",
+    authDomain: "INSERISCI_DOMAIN",
+    projectId: "INSERISCI_PROJECT_ID"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  let current = new Date();
+  let selectedDate = null;
+
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('main').style.display = 'block';
+      render();
+    }
+  });
+
+  function login() {
+    auth.signInWithEmailAndPassword(email.value, password.value)
+      .catch(() => auth.createUserWithEmailAndPassword(email.value, password.value));
+  }
+
+  function render() {
+    const cal = document.getElementById('calendar');
+    cal.innerHTML = '';
+
+    const y = current.getFullYear();
+    const m = current.getMonth();
+    document.getElementById('month').textContent = current.toLocaleDateString('it-IT', {month:'long',year:'numeric'});
+
+    ['L','M','M','G','V','S','D'].forEach(d=>{
+      const e=document.createElement('div');e.textContent=d;e.className='day-name';cal.appendChild(e);
+    });
+
+    const first = new Date(y,m,1).getDay()||7;
+    for(let i=1;i<first;i++) cal.appendChild(document.createElement('div'));
+
+    const days = new Date(y,m+1,0).getDate();
+    for(let d=1;d<=days;d++){
+      const key=`${y}-${m+1}-${d}`;
+      const el=document.createElement('div');
+      el.className='day';
+      el.textContent=d;
+      el.onclick=()=>openModal(key);
+
+      db.collection('calendar').doc(key).get().then(doc=>{
+        if(doc.exists){
+          const data=doc.data();
+          el.classList.add(data.place);
+          if(data.missed) el.classList.add('missed');
+          if(data.start) el.innerHTML+=`<div class='time'>${data.start}-${data.end}</div>`;
+        }
+      });
+      cal.appendChild(el);
+    }
+    updateStats();
+  }
+
+  function openModal(date){
+    selectedDate=date;
+    document.getElementById('modalDate').textContent=date;
+    modal.style.display='flex';
+  }
+
+  function closeModal(){ modal.style.display='none'; }
+
+  let tempPlace=null;
+  function setPlace(p){ tempPlace=p; }
+
+  function saveDay(){
+    db.collection('calendar').doc(selectedDate).set({
+      place: tempPlace,
+      start: startTime.value,
+      end: endTime.value,
+      missed: false
+    });
+    closeModal();
+    render();
+  }
+
+  function autoReschedule(){
+    db.collection('calendar').orderBy(firebase.firestore.FieldPath.documentId()).get().then(snap=>{
+      snap.forEach(doc=>{
+        const data=doc.data();
+        if(!data.missed){
+          doc.ref.update({missed:true});
+          const d=new Date(doc.id);
+          d.setDate(d.getDate()+1);
+          const k=`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+          db.collection('calendar').doc(k).set({...data,missed:false});
+          return;
+        }
+      });
+    });
+  }
+
+  function changeMonth(n){ current.setMonth(current.getMonth()+n); render(); }
+
+  function updateStats(){
+    db.collection('calendar').get().then(snap=>{
+      let mine=0, hers=0;
+      snap.forEach(d=>{ if(d.data().place==='my-house') mine++; if(d.data().place==='her-house') hers++; });
+      stats.textContent=`📊 Casa tua: ${mine} notti | Casa sua: ${hers} notti`;
+    });
+  }
+</script>
+
+</body>
+</html>
