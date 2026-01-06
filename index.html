@@ -2,199 +2,366 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>AIYDIWDWY</title>
+<title>AIYDIWDWY v2.0</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body {margin:0;font-family:Arial,sans-serif;background:#121212;color:#fff;display:flex;justify-content:center;padding:10px;}
-.app {width:100%;max-width:500px;background:#1e1e1e;border-radius:14px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,0.6);}
-h1 {text-align:center;margin:5px 0 15px;font-size:24px;}
-input, button {width:100%;padding:12px;margin-bottom:10px;border-radius:8px;border:none;font-size:16px;}
-button {background:#333;color:white;cursor:pointer;}
-button.primary {background:#6a1b9a;}
-button.secondary {background:#7b1f35;}
-.calendar {display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:15px;}
-.day-name {text-align:center;font-size:14px;opacity:0.8;}
-.day {background:#2a2a2a;text-align:center;padding:15px 0;border-radius:8px;cursor:pointer;font-size:16px;}
-.casa-cicci {background:#4b1c6f;} /* Casa mia */
-.casa-cucci {background:#5b0f24;} /* Casa sua */
-.missed {outline:3px dashed #ff9800;}
-.time {font-size:12px;opacity:0.9;margin-top:4px;}
-.modal {position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;}
-.modal-content {background:#222;padding:20px;border-radius:12px;width:90%;max-width:320px;}
-.stats {font-size:14px;margin-top:15px;opacity:0.9;}
+    body {margin:0;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;background:#121212;color:#e0e0e0;display:flex;justify-content:center;padding:10px; box-sizing: border-box;}
+    .app {width:100%;max-width:500px;background:#1e1e1e;border-radius:16px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,0.8); border: 1px solid #333;}
+    h1 {text-align:center;margin:5px 0 20px;font-size:26px; letter-spacing: 1px;}
+    
+    /* Inputs & Buttons */
+    input, button {width:100%;padding:14px;margin-bottom:12px;border-radius:10px;border:none;font-size:16px;box-sizing: border-box;}
+    input {background:#2c2c2c; color:#fff; border: 1px solid #444;}
+    input:focus {outline: 2px solid #6a1b9a;}
+    
+    button {font-weight: bold; transition: all 0.2s;}
+    button:active {transform: scale(0.98);}
+    button.primary {background:linear-gradient(45deg, #6a1b9a, #8e24aa);color:white;box-shadow: 0 4px 15px rgba(106, 27, 154, 0.4);}
+    button.secondary {background:linear-gradient(45deg, #880e4f, #ad1457);color:white;box-shadow: 0 4px 15px rgba(136, 14, 79, 0.4);}
+    button.ghost {background: transparent; border: 1px solid #444; color: #aaa;}
+    
+    /* Calendar Grid */
+    .calendar-header {display:flex;justify-content:space-between;align-items:center; margin-bottom: 10px;}
+    .calendar {display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:10px;}
+    .day-name {text-align:center;font-size:12px;opacity:0.6; text-transform: uppercase; letter-spacing: 1px;}
+    
+    .day {
+        background:#2a2a2a;
+        min-height: 50px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        border-radius:10px; cursor:pointer; font-size:16px; position: relative;
+        border: 1px solid transparent;
+        transition: background 0.2s;
+    }
+    
+    /* Stati dei giorni */
+    .casa-cicci {background:#4a148c; border-color: #7c43bd;} /* Viola scuro */
+    .casa-cucci {background:#880e4f; border-color: #c2185b;} /* Rosso scuro */
+    .missed {opacity: 0.4; background: #333 !important; border: 1px dashed #777 !important; color: #888;}
+    
+    .time {font-size:10px; background: rgba(0,0,0,0.4); padding: 2px 4px; border-radius: 4px; margin-top: 2px;}
+    
+    /* Modale */
+    .modal {position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center; z-index: 100;}
+    .modal-content {background:#222;padding:25px;border-radius:16px;width:90%;max-width:340px; text-align: center; border: 1px solid #444;}
+    
+    /* Pulsanti selezione nella modale */
+    .place-selector {display: flex; gap: 10px; margin-bottom: 15px;}
+    .place-btn {flex: 1; opacity: 0.5; border: 2px solid transparent;}
+    .place-btn.active {opacity: 1; border-color: #fff; transform: scale(1.05);}
+    
+    .stats {font-size:13px;margin-top:20px;padding-top:15px; border-top: 1px solid #333; display: flex; justify-content: space-around; color: #bbb;}
+    .label {font-size: 12px; display: block; text-align: left; margin-bottom: 4px; color: #aaa;}
 </style>
 </head>
 <body>
 
 <div class="app">
-<h1>💜 AIYDIWDWY</h1>
+    <h1>💜 AIYDIWDWY</h1>
 
-<!-- LOGIN -->
-<div id="login">
-<input id="email" type="email" placeholder="Email">
-<input id="password" type="password" placeholder="Password">
-<button onclick="login()">Accedi / Registrati</button>
+    <div id="login">
+        <input id="email" type="email" placeholder="Email">
+        <input id="password" type="password" placeholder="Password">
+        <button class="primary" onclick="login()">Accedi / Registrati</button>
+    </div>
+
+    <div id="main" style="display:none;">
+        <div class="calendar-header">
+            <button class="ghost" style="width:auto; margin:0;" onclick="changeMonth(-1)">◀</button>
+            <strong id="month" style="font-size: 18px;"></strong>
+            <button class="ghost" style="width:auto; margin:0;" onclick="changeMonth(1)">▶</button>
+        </div>
+
+        <div class="calendar" id="calendar"></div>
+
+        <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+            <button class="primary" onclick="shiftScheduleFromToday()">😅 Oggi è saltato: Slitta tutto!</button>
+            <button class="secondary" onclick="forceBalanceMonth()">⚖️ Riscrivi Mese (Alternanza Perfetta)</button>
+        </div>
+        
+        <div class="stats" id="stats"></div>
+    </div>
 </div>
 
-<!-- APP -->
-<div id="main" style="display:none;">
-<div style="display:flex;justify-content:space-between;align-items:center;">
-<button onclick="changeMonth(-1)">◀</button>
-<strong id="month"></strong>
-<button onclick="changeMonth(1)">▶</button>
-</div>
-
-<div class="calendar" id="calendar"></div>
-
-<button class="primary" onclick="realtimeReschedule()">😅 Non abbiamo seguito il calendario</button>
-<button class="secondary" onclick="balanceCalendar()">⚖️ Bilancia Casa Cucci / Casa Cicci</button>
-<div class="stats" id="stats"></div>
-</div>
-</div>
-
-<!-- MODAL ORARI -->
 <div class="modal" id="modal">
-<div class="modal-content">
-<h3 id="modalDate"></h3>
-<button class="primary" onclick="setPlace('casa-cicci')">Casa Cicci</button>
-<button class="secondary" onclick="setPlace('casa-cucci')">Casa Cucci</button>
-<input type="time" id="startTime">
-<input type="time" id="endTime">
-<button onclick="saveDay()">Salva</button>
-<button onclick="closeModal()">Annulla</button>
-</div>
+    <div class="modal-content">
+        <h3 id="modalDate" style="margin-top: 0;"></h3>
+        
+        <label class="label">Dove dormiamo?</label>
+        <div class="place-selector">
+            <button id="btn-cicci" class="place-btn" style="background:#4a148c; color:white;" onclick="setPlace('casa-cicci')">Cicci</button>
+            <button id="btn-cucci" class="place-btn" style="background:#880e4f; color:white;" onclick="setPlace('casa-cucci')">Cucci</button>
+        </div>
+
+        <label class="label">Orari (Opzionale)</label>
+        <div style="display:flex; gap:10px;">
+            <input type="time" id="startTime">
+            <input type="time" id="endTime">
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top: 10px;">
+            <button class="primary" onclick="saveDay()">Salva</button>
+            <button class="ghost" onclick="closeModal()">Chiudi</button>
+        </div>
+        <button class="ghost" style="margin-bottom:0; font-size:12px; color:#d32f2f;" onclick="markAsMissedSingle()">Segna come saltato solo questo giorno</button>
+    </div>
 </div>
 
 <script>
-const firebaseConfig = {
-apiKey:"AIzaSyCEtnsKsL6EkGmZsgx4lHEHv-CiZ5L3H98",
-authDomain:"aiydiwdwy-aiygiwgwy.firebaseapp.com",
-projectId:"aiydiwdwy-aiygiwgwy",
-storageBucket:"aiydiwdwy-aiygiwgwy.firebasestorage.app",
-messagingSenderId:"510624883472",
-appId:"1:510624883472:web:d85e00839e26c8e41c3b95"
-};
+    const firebaseConfig = {
+        apiKey:"AIzaSyCEtnsKsL6EkGmZsgx4lHEHv-CiZ5L3H98",
+        authDomain:"aiydiwdwy-aiygiwgwy.firebaseapp.com",
+        projectId:"aiydiwdwy-aiygiwgwy",
+        storageBucket:"aiydiwdwy-aiygiwgwy.firebasestorage.app",
+        messagingSenderId:"510624883472",
+        appId:"1:510624883472:web:d85e00839e26c8e41c3b95"
+    };
 
-firebase.initializeApp(firebaseConfig);
-const auth=firebase.auth();
-const db=firebase.firestore();
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth=firebase.auth();
+    const db=firebase.firestore();
 
-let current=new Date(), selectedDate=null, tempPlace=null;
+    let current=new Date();
+    let selectedDate=null;
+    let tempPlace=null;
 
-// ---------------- AUTH ----------------
-auth.onAuthStateChanged(user=>{
-if(user){ document.getElementById('login').style.display='none'; document.getElementById('main').style.display='block'; initializeMonth(); }
-});
+    // ---------------- AUTH ----------------
+    auth.onAuthStateChanged(user=>{
+        if(user){ 
+            document.getElementById('login').style.display='none'; 
+            document.getElementById('main').style.display='block'; 
+            initializeMonth(); 
+        }
+    });
 
-function login(){
-const emailVal=document.getElementById('email').value;
-const passwordVal=document.getElementById('password').value;
-if(!emailVal || !passwordVal){ alert("Inserisci email e password!"); return; }
+    function login(){
+        const emailVal=document.getElementById('email').value;
+        const passwordVal=document.getElementById('password').value;
+        if(!emailVal || !passwordVal){ alert("Inserisci email e password!"); return; }
 
-auth.signInWithEmailAndPassword(emailVal,passwordVal)
-.then(()=>initializeMonth())
-.catch(()=> auth.createUserWithEmailAndPassword(emailVal,passwordVal)
-.then(()=>initializeMonth())
-.catch(err=>alert(err.message)));
-}
+        auth.signInWithEmailAndPassword(emailVal,passwordVal)
+            .catch(()=> auth.createUserWithEmailAndPassword(emailVal,passwordVal)
+            .catch(err=>alert(err.message)));
+    }
 
-// ---------------- CALENDAR ----------------
-function render(dataFromFirebase=null){
-const cal=document.getElementById('calendar'); cal.innerHTML='';
-const y=current.getFullYear(), m=current.getMonth();
-document.getElementById('month').textContent=current.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
-['L','M','M','G','V','S','D'].forEach(d=>{let e=document.createElement('div'); e.textContent=d; e.className='day-name'; cal.appendChild(e);});
-const first=new Date(y,m,1).getDay()||7; for(let i=1;i<first;i++) cal.appendChild(document.createElement('div'));
-const days=new Date(y,m+1,0).getDate();
-for(let d=1;d<=days;d++){
-  const key=`${y}-${m+1}-${d}`;
-  const el=document.createElement('div'); el.className='day'; el.textContent=d; el.onclick=()=>openModal(key);
-  if(dataFromFirebase && dataFromFirebase[key]){
-    const data=dataFromFirebase[key];
-    if(data.place) el.classList.add(data.place);
-    if(data.missed) el.classList.add('missed');
-    if(data.start && data.end) el.innerHTML+=`<div class='time'>${data.start}-${data.end}</div>`;
-  }
-  cal.appendChild(el);
-}
-updateStats();
-}
+    // ---------------- CALENDAR RENDER ----------------
+    function render(dataFromFirebase=null){
+        const cal=document.getElementById('calendar'); cal.innerHTML='';
+        const y=current.getFullYear(), m=current.getMonth();
+        
+        // Titolo Mese
+        const monthName = current.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+        document.getElementById('month').textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
-function openModal(date){ selectedDate=date; document.getElementById('modalDate').textContent=date; document.getElementById('modal').style.display='flex'; }
-function closeModal(){ document.getElementById('modal').style.display='none'; }
-function setPlace(p){ tempPlace=p; }
+        // Intestazione giorni
+        ['L','M','M','G','V','S','D'].forEach(d=>{let e=document.createElement('div'); e.textContent=d; e.className='day-name'; cal.appendChild(e);});
+        
+        // Spazi vuoti inizio mese
+        const first=new Date(y,m,1).getDay()||7; 
+        for(let i=1;i<first;i++) cal.appendChild(document.createElement('div'));
+        
+        const days=new Date(y,m+1,0).getDate();
+        
+        for(let d=1;d<=days;d++){
+            const key=`${y}-${m+1}-${d}`;
+            const el=document.createElement('div'); 
+            el.className='day'; 
+            el.innerHTML = `<strong>${d}</strong>`;
+            el.onclick=()=>openModal(key);
+            
+            if(dataFromFirebase && dataFromFirebase[key]){
+                const data=dataFromFirebase[key];
+                
+                if(data.missed) {
+                    el.classList.add('missed');
+                } else if(data.place) {
+                    el.classList.add(data.place);
+                }
+                
+                if(!data.missed && data.start && data.end){
+                    el.innerHTML+=`<div class='time'>${data.start}-${data.end}</div>`;
+                }
+            }
+            cal.appendChild(el);
+        }
+        updateStats();
+    }
 
-function saveDay(){
-if(!tempPlace){ alert("Seleziona Casa Cicci o Casa Cucci"); return; }
-db.collection('calendar').doc(selectedDate).set({
-place: tempPlace,
-start: document.getElementById('startTime').value || '20:00',
-end: document.getElementById('endTime').value || '08:00',
-missed:false
-});
-}
+    // ---------------- MODAL LOGIC ----------------
+    function openModal(date){ 
+        selectedDate=date; 
+        tempPlace=null; // Reset selezione
+        
+        // Formatta data leggibile
+        const parts = date.split('-');
+        const dateObj = new Date(parts[0], parts[1]-1, parts[2]);
+        document.getElementById('modalDate').textContent = dateObj.toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long'});
+        
+        // Reset UI
+        document.getElementById('startTime').value = '';
+        document.getElementById('endTime').value = '';
+        updatePlaceUI();
+        
+        // Carica dati esistenti se ci sono
+        db.collection('calendar').doc(date).get().then(doc => {
+            if(doc.exists){
+                const data = doc.data();
+                if(data.place) setPlace(data.place);
+                if(data.start) document.getElementById('startTime').value = data.start;
+                if(data.end) document.getElementById('endTime').value = data.end;
+            }
+        });
 
-// Bilanciamento calendario
-function balanceCalendar(){
-db.collection('calendar').get().then(snap=>{
-let cicciDays=0, cucciDays=0;
-snap.docs.forEach(d=>{ if(d.data().place==='casa-cicci') cicciDays++; else if(d.data().place==='casa-cucci') cucciDays++; });
-const totalDays=cicciDays+cucciDays; const target=Math.floor(totalDays/2);
-let diffCicci=target-cicciDays;
-if(diffCicci>0){ // sposta da cucci a cicci
-snap.docs.forEach(d=>{ if(diffCicci<=0) return; if(d.data().place==='casa-cucci'){ d.ref.update({place:'casa-cicci'}); diffCicci--; }});
-} else if(diffCicci<0){ // sposta da cicci a cucci
-let diffCucci=-diffCicci;
-snap.docs.forEach(d=>{ if(diffCucci<=0) return; if(d.data().place==='casa-cicci'){ d.ref.update({place:'casa-cucci'}); diffCucci--; }});
-}
-});
-}
+        document.getElementById('modal').style.display='flex'; 
+    }
 
-// ---------------- INIZIALIZZA MESE E REALTIME ----------------
-function initializeMonth(){
-const y=current.getFullYear(), m=current.getMonth();
-const days=new Date(y,m+1,0).getDate();
+    function closeModal(){ document.getElementById('modal').style.display='none'; }
 
-// Se il mese è vuoto, riempi automaticamente
-db.collection('calendar').get().then(snap=>{
-if(snap.empty){
-for(let d=1; d<=days; d++){
-const key=`${y}-${m+1}-${d}`;
-const place=(d%2===0)?'casa-cicci':'casa-cucci';
-db.collection('calendar').doc(key).set({place:place, start:'20:00', end:'08:00', missed:false});
-}}});
+    function setPlace(p){ 
+        tempPlace=p; 
+        updatePlaceUI();
+    }
 
-// Realtime listener
-db.collection('calendar').onSnapshot(snapshot=>{
-let dataFromFirebase={};
-snapshot.docs.forEach(doc=>{ dataFromFirebase[doc.id]=doc.data(); });
-render(dataFromFirebase);
-});
-}
+    function updatePlaceUI(){
+        document.getElementById('btn-cicci').classList.remove('active');
+        document.getElementById('btn-cucci').classList.remove('active');
+        if(tempPlace === 'casa-cicci') document.getElementById('btn-cicci').classList.add('active');
+        if(tempPlace === 'casa-cucci') document.getElementById('btn-cucci').classList.add('active');
+    }
 
-// ---------------- RISCHEDULING REALTIME ----------------
-function realtimeReschedule(){
-db.collection('calendar').get().then(snap=>{
-for(const doc of snap.docs){
-const data=doc.data();
-if(!data.missed){
-doc.ref.update({missed:true});
-const d=new Date(doc.id); d.setDate(d.getDate()+1);
-const k=`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
-db.collection('calendar').doc(k).set({...data, missed:false});
-break;
-}
-}
-});
-}
-function changeMonth(n){ current.setMonth(current.getMonth()+n); }
-function updateStats(){ db.collection('calendar').get().then(snap=>{ let cicci=0, cucci=0; snap.forEach(d=>{ if(d.data().place==='casa-cicci') cicci++; if(d.data().place==='casa-cucci') cucci++; }); document.getElementById('stats').textContent=`📊 Casa Cicci: ${cicci} notti | Casa Cucci: ${cucci} notti`; }); }
+    function saveDay(){
+        if(!tempPlace){ alert("Per favore seleziona Casa Cicci o Casa Cucci"); return; }
+        
+        // Orari opzionali: se vuoti salviamo stringa vuota
+        const s = document.getElementById('startTime').value;
+        const e = document.getElementById('endTime').value;
+
+        db.collection('calendar').doc(selectedDate).set({
+            place: tempPlace,
+            start: s ? s : "", 
+            end: e ? e : "",
+            missed: false
+        }).then(closeModal);
+    }
+
+    function markAsMissedSingle() {
+        if(confirm("Segnare questo giorno come 'Saltato' senza spostare gli altri?")) {
+            db.collection('calendar').doc(selectedDate).update({missed: true, place: null, start: "", end: ""}).then(closeModal);
+        }
+    }
+
+    // ---------------- FUNZIONI SMART ----------------
+
+    // 1. Bilanciamento Alternato Perfetto (A-B-A-B)
+    function forceBalanceMonth(){
+        if(!confirm("Questo riscriverà l'intero mese visualizzato alternando le case (1 notte a testa) partendo dal giorno 1. Continuare?")) return;
+
+        const y=current.getFullYear(), m=current.getMonth();
+        const days=new Date(y,m+1,0).getDate();
+        const batch = db.batch();
+
+        for(let d=1; d<=days; d++){
+            const key=`${y}-${m+1}-${d}`;
+            // Pari = Cicci, Dispari = Cucci (o viceversa, si può cambiare)
+            const place = (d % 2 !== 0) ? 'casa-cicci' : 'casa-cucci';
+            const ref = db.collection('calendar').doc(key);
+            batch.set(ref, { place: place, start: "", end: "", missed: false });
+        }
+
+        batch.commit().then(() => alert("Calendario bilanciato perfettamente!"));
+    }
+
+    // 2. Slittamento Intelligente (Shift Schedule)
+    // Se oggi non abbiamo seguito il piano, segna oggi come missed e sposta tutto di +1
+    function shiftScheduleFromToday(){
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = today.getMonth() + 1;
+        const d = today.getDate();
+        const todayKey = `${y}-${m}-${d}`;
+
+        if(!confirm(`Segnare oggi (${d}/${m}) come 'Saltato' e spostare tutti i piani futuri di un giorno in avanti?`)) return;
+
+        db.collection('calendar').orderBy(firebase.firestore.FieldPath.documentId()).get().then(snap => {
+            const updates = {};
+            let foundToday = false;
+            let previousData = null;
+
+            // Iteriamo tutti i documenti
+            snap.docs.forEach((doc, index) => {
+                const key = doc.id;
+                
+                // Logica: Troviamo oggi.
+                if (key === todayKey) {
+                    foundToday = true;
+                    // Salviamo il piano di oggi per darlo a domani
+                    previousData = doc.data(); 
+                    // Oggi diventa missed
+                    updates[key] = { missed: true, place: null, start: "", end: "" };
+                } 
+                else if (foundToday) {
+                    // Siamo nel futuro.
+                    // Prendiamo il piano corrente di questo giorno per passarlo al prossimo
+                    const currentData = doc.data();
+                    
+                    // Assegniamo a questo giorno il piano del giorno precedente
+                    if (previousData) {
+                        updates[key] = previousData;
+                    }
+                    
+                    // Aggiorniamo previousData per il prossimo giro
+                    previousData = currentData;
+                }
+            });
+
+            // Applichiamo le modifiche in batch (o loop se batch è troppo complesso qui)
+            const batch = db.batch();
+            Object.keys(updates).forEach(k => {
+                batch.set(db.collection('calendar').doc(k), updates[k]);
+            });
+            return batch.commit();
+        }).then(() => alert("Piani slittati con successo!"));
+    }
+
+    // ---------------- UTILS ----------------
+    function initializeMonth(){
+        // Listener Realtime
+        db.collection('calendar').onSnapshot(snapshot=>{
+            let data={};
+            snapshot.docs.forEach(doc=>{ data[doc.id]=doc.data(); });
+            render(data);
+        });
+    }
+
+    function changeMonth(n){ 
+        current.setMonth(current.getMonth()+n); 
+        // Triggera un re-render manuale vuoto finché il listener non scatta o per refreshare UI date
+        initializeMonth(); 
+    }
+
+    function updateStats(){ 
+        const y=current.getFullYear(), m=current.getMonth();
+        // Conta solo i giorni del mese visualizzato
+        db.collection('calendar').get().then(snap=>{ 
+            let cicci=0, cucci=0; 
+            snap.forEach(d=>{ 
+                const dateParts = d.id.split('-');
+                if(parseInt(dateParts[0]) === y && parseInt(dateParts[1]) === m+1 && !d.data().missed){
+                    if(d.data().place==='casa-cicci') cicci++; 
+                    if(d.data().place==='casa-cucci') cucci++; 
+                }
+            }); 
+            document.getElementById('stats').innerHTML = `
+                <div>💜 Cicci: <strong>${cicci}</strong></div>
+                <div>🍷 Cucci: <strong>${cucci}</strong></div>
+            `; 
+        }); 
+    }
 </script>
 </body>
 </html>
