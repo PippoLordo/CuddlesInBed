@@ -1,314 +1,200 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <title>AIYDIWDWY</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>AIYDIWDWY</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #121212;
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      padding: 10px;
-    }
-
-    .app {
-      width: 100%;
-      max-width: 500px;
-      background: #1e1e1e;
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-    }
-
-    h1 {
-      text-align: center;
-      margin: 5px 0 15px;
-      font-size: 24px;
-    }
-
-    input, button {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 10px;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
-    }
-
-    button {
-      background: #333;
-      color: white;
-      cursor: pointer;
-    }
-
-    button.primary { background: #6a1b9a; }
-    button.secondary { background: #7b1f35; }
-
-    .calendar {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-      margin-top: 15px;
-    }
-
-    .day-name {
-      text-align: center;
-      font-size: 14px;
-      opacity: 0.8;
-    }
-
-    .day {
-      background: #2a2a2a;
-      text-align: center;
-      padding: 15px 0;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-
-    .casa-cicci { background: #4b1c6f; } /* Casa mia */
-    .casa-cucci { background: #5b0f24; } /* Casa sua */
-    .missed { outline: 3px dashed #ff9800; }
-
-    .time {
-      font-size: 12px;
-      opacity: 0.9;
-      margin-top: 4px;
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.7);
-      display: none;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal-content {
-      background: #222;
-      padding: 20px;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 320px;
-    }
-
-    .stats {
-      font-size: 14px;
-      margin-top: 15px;
-      opacity: 0.9;
-    }
-  </style>
+<style>
+body {margin:0;font-family:Arial,sans-serif;background:#121212;color:#fff;display:flex;justify-content:center;padding:10px;}
+.app {width:100%;max-width:500px;background:#1e1e1e;border-radius:14px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,0.6);}
+h1 {text-align:center;margin:5px 0 15px;font-size:24px;}
+input, button {width:100%;padding:12px;margin-bottom:10px;border-radius:8px;border:none;font-size:16px;}
+button {background:#333;color:white;cursor:pointer;}
+button.primary {background:#6a1b9a;}
+button.secondary {background:#7b1f35;}
+.calendar {display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:15px;}
+.day-name {text-align:center;font-size:14px;opacity:0.8;}
+.day {background:#2a2a2a;text-align:center;padding:15px 0;border-radius:8px;cursor:pointer;font-size:16px;}
+.casa-cicci {background:#4b1c6f;} /* Casa mia */
+.casa-cucci {background:#5b0f24;} /* Casa sua */
+.missed {outline:3px dashed #ff9800;}
+.time {font-size:12px;opacity:0.9;margin-top:4px;}
+.modal {position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;}
+.modal-content {background:#222;padding:20px;border-radius:12px;width:90%;max-width:320px;}
+.stats {font-size:14px;margin-top:15px;opacity:0.9;}
+</style>
 </head>
 <body>
 
 <div class="app">
-  <h1>💜 AIYDIWDWY</h1>
+<h1>💜 AIYDIWDWY</h1>
 
-  <!-- LOGIN -->
-  <div id="login">
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
-    <button onclick="login()">Accedi / Registrati</button>
-  </div>
+<!-- LOGIN -->
+<div id="login">
+<input id="email" type="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<button onclick="login()">Accedi / Registrati</button>
+</div>
 
-  <!-- APP -->
-  <div id="main" style="display:none;">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <button onclick="changeMonth(-1)">◀</button>
-      <strong id="month"></strong>
-      <button onclick="changeMonth(1)">▶</button>
-    </div>
+<!-- APP -->
+<div id="main" style="display:none;">
+<div style="display:flex;justify-content:space-between;align-items:center;">
+<button onclick="changeMonth(-1)">◀</button>
+<strong id="month"></strong>
+<button onclick="changeMonth(1)">▶</button>
+</div>
 
-    <div class="calendar" id="calendar"></div>
+<div class="calendar" id="calendar"></div>
 
-    <button class="primary" onclick="autoReschedule()">😅 Non abbiamo seguito il calendario</button>
-
-    <button class="secondary" onclick="balanceCalendar()">⚖️ Bilancia Casa Cucci / Casa Cicci</button>
-
-    <div class="stats" id="stats"></div>
-  </div>
+<button class="primary" onclick="realtimeReschedule()">😅 Non abbiamo seguito il calendario</button>
+<button class="secondary" onclick="balanceCalendar()">⚖️ Bilancia Casa Cucci / Casa Cicci</button>
+<div class="stats" id="stats"></div>
+</div>
 </div>
 
 <!-- MODAL ORARI -->
 <div class="modal" id="modal">
-  <div class="modal-content">
-    <h3 id="modalDate"></h3>
-    <button class="primary" onclick="setPlace('casa-cicci')">Casa Cicci</button>
-    <button class="secondary" onclick="setPlace('casa-cucci')">Casa Cucci</button>
-    <input type="time" id="startTime">
-    <input type="time" id="endTime">
-    <button onclick="saveDay()">Salva</button>
-    <button onclick="closeModal()">Annulla</button>
-  </div>
+<div class="modal-content">
+<h3 id="modalDate"></h3>
+<button class="primary" onclick="setPlace('casa-cicci')">Casa Cicci</button>
+<button class="secondary" onclick="setPlace('casa-cucci')">Casa Cucci</button>
+<input type="time" id="startTime">
+<input type="time" id="endTime">
+<button onclick="saveDay()">Salva</button>
+<button onclick="closeModal()">Annulla</button>
+</div>
 </div>
 
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCEtnsKsL6EkGmZsgx4lHEHv-CiZ5L3H98",
-    authDomain: "aiydiwdwy-aiygiwgwy.firebaseapp.com",
-    projectId: "aiydiwdwy-aiygiwgwy",
-    storageBucket: "aiydiwdwy-aiygiwgwy.firebasestorage.app",
-    messagingSenderId: "510624883472",
-    appId: "1:510624883472:web:d85e00839e26c8e41c3b95"
-  };
+const firebaseConfig = {
+apiKey:"AIzaSyCEtnsKsL6EkGmZsgx4lHEHv-CiZ5L3H98",
+authDomain:"aiydiwdwy-aiygiwgwy.firebaseapp.com",
+projectId:"aiydiwdwy-aiygiwgwy",
+storageBucket:"aiydiwdwy-aiygiwgwy.firebasestorage.app",
+messagingSenderId:"510624883472",
+appId:"1:510624883472:web:d85e00839e26c8e41c3b95"
+};
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth();
+const db=firebase.firestore();
 
-  let current = new Date();
-  let selectedDate = null;
-  let tempPlace = null;
+let current=new Date(), selectedDate=null, tempPlace=null;
 
-  // ---------------- AUTH ----------------
-  auth.onAuthStateChanged(user => {
-    if(user){
-      document.getElementById('login').style.display='none';
-      document.getElementById('main').style.display='block';
-      initializeMonth();
-    }
-  });
+// ---------------- AUTH ----------------
+auth.onAuthStateChanged(user=>{
+if(user){ document.getElementById('login').style.display='none'; document.getElementById('main').style.display='block'; initializeMonth(); }
+});
 
-  function login(){
-    const emailVal = document.getElementById('email').value;
-    const passwordVal = document.getElementById('password').value;
-    if(!emailVal || !passwordVal){ alert("Inserisci email e password!"); return; }
+function login(){
+const emailVal=document.getElementById('email').value;
+const passwordVal=document.getElementById('password').value;
+if(!emailVal || !passwordVal){ alert("Inserisci email e password!"); return; }
 
-    auth.signInWithEmailAndPassword(emailVal,passwordVal)
-      .then(()=>initializeMonth())
-      .catch(()=> auth.createUserWithEmailAndPassword(emailVal,passwordVal)
-        .then(()=>initializeMonth())
-        .catch(err=>alert(err.message))
-      );
+auth.signInWithEmailAndPassword(emailVal,passwordVal)
+.then(()=>initializeMonth())
+.catch(()=> auth.createUserWithEmailAndPassword(emailVal,passwordVal)
+.then(()=>initializeMonth())
+.catch(err=>alert(err.message)));
+}
+
+// ---------------- CALENDAR ----------------
+function render(dataFromFirebase=null){
+const cal=document.getElementById('calendar'); cal.innerHTML='';
+const y=current.getFullYear(), m=current.getMonth();
+document.getElementById('month').textContent=current.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+['L','M','M','G','V','S','D'].forEach(d=>{let e=document.createElement('div'); e.textContent=d; e.className='day-name'; cal.appendChild(e);});
+const first=new Date(y,m,1).getDay()||7; for(let i=1;i<first;i++) cal.appendChild(document.createElement('div'));
+const days=new Date(y,m+1,0).getDate();
+for(let d=1;d<=days;d++){
+  const key=`${y}-${m+1}-${d}`;
+  const el=document.createElement('div'); el.className='day'; el.textContent=d; el.onclick=()=>openModal(key);
+  if(dataFromFirebase && dataFromFirebase[key]){
+    const data=dataFromFirebase[key];
+    if(data.place) el.classList.add(data.place);
+    if(data.missed) el.classList.add('missed');
+    if(data.start && data.end) el.innerHTML+=`<div class='time'>${data.start}-${data.end}</div>`;
   }
+  cal.appendChild(el);
+}
+updateStats();
+}
 
-  // ---------------- CALENDAR ----------------
-  function render(){
-    const cal = document.getElementById('calendar');
-    cal.innerHTML='';
-    const y=current.getFullYear(), m=current.getMonth();
-    document.getElementById('month').textContent=current.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+function openModal(date){ selectedDate=date; document.getElementById('modalDate').textContent=date; document.getElementById('modal').style.display='flex'; }
+function closeModal(){ document.getElementById('modal').style.display='none'; }
+function setPlace(p){ tempPlace=p; }
 
-    ['L','M','M','G','V','S','D'].forEach(d=>{let e=document.createElement('div'); e.textContent=d; e.className='day-name'; cal.appendChild(e);});
+function saveDay(){
+if(!tempPlace){ alert("Seleziona Casa Cicci o Casa Cucci"); return; }
+db.collection('calendar').doc(selectedDate).set({
+place: tempPlace,
+start: document.getElementById('startTime').value || '20:00',
+end: document.getElementById('endTime').value || '08:00',
+missed:false
+});
+}
 
-    const first=new Date(y,m,1).getDay()||7;
-    for(let i=1;i<first;i++) cal.appendChild(document.createElement('div'));
+// Bilanciamento calendario
+function balanceCalendar(){
+db.collection('calendar').get().then(snap=>{
+let cicciDays=0, cucciDays=0;
+snap.docs.forEach(d=>{ if(d.data().place==='casa-cicci') cicciDays++; else if(d.data().place==='casa-cucci') cucciDays++; });
+const totalDays=cicciDays+cucciDays; const target=Math.floor(totalDays/2);
+let diffCicci=target-cicciDays;
+if(diffCicci>0){ // sposta da cucci a cicci
+snap.docs.forEach(d=>{ if(diffCicci<=0) return; if(d.data().place==='casa-cucci'){ d.ref.update({place:'casa-cicci'}); diffCicci--; }});
+} else if(diffCicci<0){ // sposta da cicci a cucci
+let diffCucci=-diffCicci;
+snap.docs.forEach(d=>{ if(diffCucci<=0) return; if(d.data().place==='casa-cicci'){ d.ref.update({place:'casa-cucci'}); diffCucci--; }});
+}
+});
+}
 
-    const days=new Date(y,m+1,0).getDate();
-    for(let d=1;d<=days;d++){
-      const key=`${y}-${m+1}-${d}`;
-      const el=document.createElement('div');
-      el.className='day';
-      el.textContent=d;
-      el.onclick=()=>openModal(key);
+// ---------------- INIZIALIZZA MESE E REALTIME ----------------
+function initializeMonth(){
+const y=current.getFullYear(), m=current.getMonth();
+const days=new Date(y,m+1,0).getDate();
 
-      db.collection('calendar').doc(key).get().then(doc=>{
-        if(doc.exists){
-          const data=doc.data();
-          if(data.place) el.classList.add(data.place);
-          if(data.missed) el.classList.add('missed');
-          if(data.start && data.end) el.innerHTML+=`<div class='time'>${data.start}-${data.end}</div>`;
-        }
-      });
-      cal.appendChild(el);
-    }
-    updateStats();
-  }
+// Se il mese è vuoto, riempi automaticamente
+db.collection('calendar').get().then(snap=>{
+if(snap.empty){
+for(let d=1; d<=days; d++){
+const key=`${y}-${m+1}-${d}`;
+const place=(d%2===0)?'casa-cicci':'casa-cucci';
+db.collection('calendar').doc(key).set({place:place, start:'20:00', end:'08:00', missed:false});
+}}});
 
-  function openModal(date){
-    selectedDate=date;
-    document.getElementById('modalDate').textContent=date;
-    document.getElementById('modal').style.display='flex';
-  }
+// Realtime listener
+db.collection('calendar').onSnapshot(snapshot=>{
+let dataFromFirebase={};
+snapshot.docs.forEach(doc=>{ dataFromFirebase[doc.id]=doc.data(); });
+render(dataFromFirebase);
+});
+}
 
-  function closeModal(){ document.getElementById('modal').style.display='none'; }
-  function setPlace(p){ tempPlace=p; }
-
-  function saveDay(){
-    if(!tempPlace){ alert("Seleziona Casa Cicci o Casa Cucci"); return; }
-    db.collection('calendar').doc(selectedDate).set({
-      place: tempPlace,
-      start: document.getElementById('startTime').value,
-      end: document.getElementById('endTime').value,
-      missed:false
-    }).then(()=>{ closeModal(); render(); });
-  }
-
-  function autoReschedule(){
-    db.collection('calendar').orderBy(firebase.firestore.FieldPath.documentId()).get().then(snap=>{
-      for(const doc of snap.docs){
-        const data=doc.data();
-        if(!data.missed){
-          doc.ref.update({missed:true});
-          const d=new Date(doc.id);
-          d.setDate(d.getDate()+1);
-          const k=`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
-          db.collection('calendar').doc(k).set({...data,missed:false});
-          break;
-        }
-      }
-      render();
-    });
-  }
-
-  function changeMonth(n){ current.setMonth(current.getMonth()+n); render(); }
-
-  function updateStats(){
-    db.collection('calendar').get().then(snap=>{
-      let cicci=0, cucci=0;
-      snap.forEach(d=>{ if(d.data().place==='casa-cicci') cicci++; if(d.data().place==='casa-cucci') cucci++; });
-      document.getElementById('stats').textContent=`📊 Casa Cicci: ${cicci} notti | Casa Cucci: ${cucci} notti`;
-    });
-  }
-
-  // ---------------- INIZIALIZZA IL MESE ----------------
-  function initializeMonth(){
-    const y=current.getFullYear(), m=current.getMonth();
-    const days=new Date(y,m+1,0).getDate();
-    db.collection('calendar').get().then(snap=>{
-      if(snap.empty){
-        // riempi il mese equamente
-        for(let d=1; d<=days; d++){
-          const key=`${y}-${m+1}-${d}`;
-          const place = (d%2===0)?'casa-cicci':'casa-cucci';
-          db.collection('calendar').doc(key).set({place:place, start:'20:00', end:'08:00', missed:false});
-        }
-      }
-      render();
-    });
-  }
-
-  // ---------------- BILANCIA IL CALENDARIO ----------------
-  function balanceCalendar(){
-    db.collection('calendar').get().then(snap=>{
-      let cicciDays=0, cucciDays=0;
-      snap.forEach(d=>{ if(d.data().place==='casa-cicci') cicciDays++; else if(d.data().place==='casa-cucci') cucciDays++; });
-      const diff = cucciDays - cicciDays;
-      if(diff>0){
-        let toFlip = Math.floor(diff/2);
-        snap.forEach(d=>{
-          if(toFlip<=0) return;
-          if(d.data().place==='casa-cucci'){
-            d.ref.update({place:'casa-cicci'});
-            toFlip--;
-          }
-        });
-      }
-      render();
-    });
-  }
+// ---------------- RISCHEDULING REALTIME ----------------
+function realtimeReschedule(){
+db.collection('calendar').get().then(snap=>{
+for(const doc of snap.docs){
+const data=doc.data();
+if(!data.missed){
+doc.ref.update({missed:true});
+const d=new Date(doc.id); d.setDate(d.getDate()+1);
+const k=`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+db.collection('calendar').doc(k).set({...data, missed:false});
+break;
+}
+}
+});
+}
+function changeMonth(n){ current.setMonth(current.getMonth()+n); }
+function updateStats(){ db.collection('calendar').get().then(snap=>{ let cicci=0, cucci=0; snap.forEach(d=>{ if(d.data().place==='casa-cicci') cicci++; if(d.data().place==='casa-cucci') cucci++; }); document.getElementById('stats').textContent=`📊 Casa Cicci: ${cicci} notti | Casa Cucci: ${cucci} notti`; }); }
 </script>
-
 </body>
 </html>
