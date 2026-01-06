@@ -134,6 +134,7 @@
         <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
             <button class="primary" onclick="shiftScheduleFromToday()">😅 Oggi è saltato: Slitta tutto!</button>
             <button class="secondary" onclick="forceBalanceMonth()">⚖️ Riscrivi Mese (Alternanza)</button>
+            <button class="secondary" style="background: #444; color: #ddd; border: 1px dashed #777;" onclick="setAllToDecide()">🤔 Imposta Mese "Da Decidere"</button>
             <button class="ghost" style="color: #ef5350; border-color: #ef5350;" onclick="resetMonthColors()">🗑️ Reset Colori Mese (Mantieni Foto/Note)</button>
         </div>
         
@@ -476,6 +477,27 @@
         }).then(() => alert("Piani slittati!"));
     }
 
+    // Funzione "Da Decidere" per tutto il mese
+    function setAllToDecide(){
+        if(!confirm("Vuoi impostare TUTTI i giorni di questo mese come 'Da Decidere'?")) return;
+
+        const y=current.getFullYear(), m=current.getMonth();
+        const days=new Date(y,m+1,0).getDate();
+        const batch = db.batch();
+
+        for(let d=1; d<=days; d++){
+            const key=`${y}-${m+1}-${d}`;
+            const ref = db.collection('calendar').doc(key);
+            // Impostiamo place su da-decidere, ma manteniamo note/foto con merge: true
+            batch.set(ref, {
+                place: 'da-decidere',
+                missed: false
+            }, {merge: true});
+        }
+
+        batch.commit().then(() => alert("Tutto il mese impostato su 'Da Decidere'!"));
+    }
+
     // Funzione Reset Colori
     function resetMonthColors(){
         if(!confirm("⚠️ ATTENZIONE: Vuoi rimuovere tutti i colori/luoghi di questo mese? \n\nNote e Foto NON verranno cancellate.")) return;
@@ -487,7 +509,6 @@
         for(let d=1; d<=days; d++){
             const key=`${y}-${m+1}-${d}`;
             const ref = db.collection('calendar').doc(key);
-            // merge: true mantiene i campi che non sovrascriviamo (note, photoUrl)
             batch.set(ref, {
                 place: null,
                 start: "",
