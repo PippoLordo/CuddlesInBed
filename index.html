@@ -18,7 +18,7 @@
     input, button, textarea {width:100%;padding:14px;margin-bottom:12px;border-radius:10px;border:none;font-size:16px;box-sizing: border-box;}
     input, textarea {background:#2c2c2c; color:#fff; border: 1px solid #444; font-family: inherit;}
     input:focus, textarea:focus {outline: 2px solid #6a1b9a;}
-    textarea {resize: vertical; min-height: 60px;}
+    textarea {resize: vertical; min-height: 80px;}
 
     button {font-weight: bold; transition: all 0.2s; cursor: pointer;}
     button:active {transform: scale(0.98);}
@@ -41,6 +41,14 @@
     /* Stati */
     .casa-cicci {background:#4a148c; border-color: #7c43bd;} 
     .casa-cucci {background:#880e4f; border-color: #c2185b;} 
+    
+    /* Stato "Da Decidere" */
+    .da-decidere {
+        background: #2a2a2a; 
+        border: 2px dashed #666; 
+        color: #ddd;
+    }
+
     .missed {opacity: 0.4; background: #333 !important; border: 1px dashed #777 !important; color: #888;}
     
     .time {font-size:10px; background: rgba(0,0,0,0.4); padding: 2px 4px; border-radius: 4px; margin-top: 2px;}
@@ -55,13 +63,30 @@
     .modal {position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center; z-index: 100;}
     .modal-content {background:#222;padding:25px;border-radius:16px;width:90%;max-width:340px; text-align: center; border: 1px solid #444; max-height: 90vh; overflow-y: auto;}
     
-    /* Selettore Luogo */
-    .place-selector {display: flex; gap: 10px; margin-bottom: 10px;}
-    .place-btn {flex: 1; opacity: 0.5; border: 2px solid transparent;}
-    .place-btn.active {opacity: 1; border-color: #fff; transform: scale(1.05);}
+    /* STILE PULSANTI LUOGO */
+    .place-row {display: flex; gap: 10px; margin-bottom: 10px;} /* Riga per Cicci/Cucci */
     
-    .stats {font-size:13px;margin-top:20px;padding-top:15px; border-top: 1px solid #333; display: flex; justify-content: space-around; color: #bbb;}
-    .label {font-size: 12px; display: block; text-align: left; margin-bottom: 4px; color: #aaa; margin-top: 10px;}
+    .place-btn {flex: 1; opacity: 0.5; border: 2px solid transparent; font-size: 14px; padding: 12px; margin-bottom: 0;}
+    .place-btn.active {opacity: 1; border-color: #fff; transform: scale(1.02);}
+    
+    /* Bottone "Da Decidere" sotto */
+    #btn-decidere {
+        width: 100%; 
+        background: #2a2a2a; 
+        border: 1px dashed #666; 
+        color: #aaa; 
+        opacity: 0.7;
+        margin-bottom: 20px; /* Spazio sotto prima degli orari */
+    }
+    #btn-decidere.active {
+        opacity: 1; 
+        border: 1px solid #fff; 
+        background: #333; 
+        color: #fff;
+    }
+
+    .stats {font-size:13px;margin-top:20px;padding-top:15px; border-top: 1px solid #333; display: flex; flex-wrap: wrap; justify-content: space-around; color: #bbb;}
+    .label {font-size: 12px; display: block; text-align: left; margin-bottom: 4px; color: #aaa; margin-top: 15px;}
     
     /* Foto Preview */
     .photo-preview {width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; border: 1px solid #444; display: none;}
@@ -103,12 +128,14 @@
     <div class="modal-content">
         <h3 id="modalDate" style="margin-top: 0;"></h3>
         
-        <label class="label">Dove dormiamo?</label>
-        <div class="place-selector">
+        <label class="label" style="margin-top: 0;">Dove dormiamo?</label>
+        
+        <div class="place-row">
             <button id="btn-cicci" class="place-btn" style="background:#4a148c; color:white;" onclick="setPlace('casa-cicci')">Cicci</button>
             <button id="btn-cucci" class="place-btn" style="background:#880e4f; color:white;" onclick="setPlace('casa-cucci')">Cucci</button>
         </div>
-        <button class="ghost" style="padding: 8px; font-size:12px; margin-bottom: 5px;" onclick="setPlace(null)">❌ Nessuno (Reset)</button>
+        
+        <button id="btn-decidere" onclick="setPlace('da-decidere')">🤔 Da Decidere</button>
 
         <label class="label">Orari (Opzionale)</label>
         <div style="display:flex; gap:10px;">
@@ -116,10 +143,10 @@
             <input type="time" id="endTime">
         </div>
 
-        <label class="label">Note / Diario</label>
-        <textarea id="noteText" placeholder="Scrivi un pensiero..."></textarea>
+        <label class="label">Descrizione del giorno</label>
+        <textarea id="noteText" placeholder="Es: Cena fuori, Compleanno, etc..."></textarea>
 
-        <label class="label">Foto del giorno (GitHub)</label>
+        <label class="label">Foto (GitHub)</label>
         <img id="imgPreview" class="photo-preview" src="">
         <div class="file-input-wrapper">
             <button class="btn-upload">📷 Carica / Cambia Foto</button>
@@ -137,11 +164,8 @@
 
 <script>
     // --- CONFIGURAZIONE GITHUB ---
-    // COMPILA QUESTI CAMPI CON I TUOI DATI:
-    const GH_USER = "IL_TUO_USERNAME_GITHUB"; // Es: mariorossi
-    const GH_REPO = "IL_NOME_DELLA_REPO";     // Es: AIYDIWDWY-photos
-    
-    // Il token fornito:
+    const GH_USER = "PippoLordo"; 
+    const GH_REPO = "CuddlesInBed";     
     const GH_TOKEN = "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"; 
     
     // --- CONFIGURAZIONE FIREBASE ---
@@ -214,7 +238,7 @@
                     el.innerHTML+=`<div class='time'>${data.start}-${data.end}</div>`;
                 }
 
-                // Icone per Note e Foto
+                // Icone per Descrizione (Nota) e Foto
                 let iconsHtml = '<div class="icons-container">';
                 if(data.note && data.note.trim() !== "") iconsHtml += '<span class="icon-badge">📝</span>';
                 if(data.photoUrl) iconsHtml += '<span class="icon-badge">📷</span>';
@@ -274,8 +298,11 @@
     function updatePlaceUI(){
         document.getElementById('btn-cicci').classList.remove('active');
         document.getElementById('btn-cucci').classList.remove('active');
+        document.getElementById('btn-decidere').classList.remove('active');
+        
         if(tempPlace === 'casa-cicci') document.getElementById('btn-cicci').classList.add('active');
         if(tempPlace === 'casa-cucci') document.getElementById('btn-cucci').classList.add('active');
+        if(tempPlace === 'da-decidere') document.getElementById('btn-decidere').classList.add('active');
     }
 
     // ---------------- FOTO & UPLOAD (GITHUB) ----------------
@@ -295,15 +322,10 @@
     }
 
     async function uploadToGitHub(file) {
-        if(GH_USER === "IL_TUO_USERNAME_GITHUB" || GH_REPO === "IL_NOME_DELLA_REPO") {
-            alert("ATTENZIONE: Devi modificare il codice inserendo il tuo NOME UTENTE e la REPOSITORY nelle prime righe dello script!");
-            return null;
-        }
-
         const reader = new FileReader();
         return new Promise((resolve, reject) => {
             reader.onload = async function() {
-                const base64Content = reader.result.split(',')[1]; // Rimuove "data:image..."
+                const base64Content = reader.result.split(',')[1]; 
                 const fileName = `photos/${selectedDate}-${Date.now()}.jpg`;
                 const url = `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${fileName}`;
                 
@@ -326,7 +348,6 @@
                     if(json.content && json.content.download_url) {
                         resolve(json.content.download_url);
                     } else {
-                        // Fallback URL Raw
                         resolve(`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${fileName}`);
                     }
                 } catch(e) {
@@ -346,7 +367,6 @@
 
         let finalPhotoUrl = document.getElementById('currentPhotoUrl').value;
 
-        // Se c'è un nuovo file, caricalo su GitHub
         if(fileToUpload) {
             btn.textContent = "Caricamento foto su GitHub...";
             const uploadedUrl = await uploadToGitHub(fileToUpload);
@@ -354,7 +374,7 @@
             else {
                 btn.textContent = "Errore Upload";
                 btn.disabled = false;
-                return; // Ferma il salvataggio se l'upload fallisce
+                return; 
             }
         }
 
@@ -378,10 +398,8 @@
 
     function markAsMissedSingle() {
         if(confirm("Segna come 'Saltato'?")) {
-            // Nota: mantiene la foto e la nota se vuoi, altrimenti resetta tutto
             db.collection('calendar').doc(selectedDate).update({
                 missed: true, place: null, start:"", end:"" 
-                // Non cancello note/foto in caso servano come memoria storica
             }).then(closeModal);
         }
     }
@@ -397,7 +415,6 @@
             const key=`${y}-${m+1}-${d}`;
             const place = (d % 2 !== 0) ? 'casa-cicci' : 'casa-cucci';
             const ref = db.collection('calendar').doc(key);
-            // Attenzione: .set con merge:true preserverebbe note/foto esistenti
             batch.set(ref, { place: place, missed: false }, {merge: true}); 
         }
         batch.commit().then(() => alert("Calendario bilanciato!"));
@@ -419,17 +436,12 @@
                 if (key === todayKey) {
                     foundToday = true;
                     previousData = doc.data(); 
-                    // Oggi diventa missed, ma MANTENIAMO foto e note se c'erano
                     updates[key] = { ...previousData, missed: true, place: null, start: "", end: "" };
                 } 
                 else if (foundToday) {
                     const currentData = doc.data();
                     if (previousData) {
-                        // Spostiamo tutto il pacchetto dati (note, orari, place) al giorno dopo
-                        updates[key] = {
-                            ...previousData,
-                            missed: false // Assicuriamo che il nuovo giorno non sia missed
-                        };
+                        updates[key] = { ...previousData, missed: false };
                     }
                     previousData = currentData;
                 }
@@ -452,18 +464,24 @@
         });
     }
     function changeMonth(n){ current.setMonth(current.getMonth()+n); initializeMonth(); }
+    
     function updateStats(){ 
         const y=current.getFullYear(), m=current.getMonth();
         db.collection('calendar').get().then(snap=>{ 
-            let cicci=0, cucci=0; 
+            let cicci=0, cucci=0, todecide=0; 
             snap.forEach(d=>{ 
                 const p = d.id.split('-');
                 if(parseInt(p[0])===y && parseInt(p[1])===m+1 && !d.data().missed){
                     if(d.data().place==='casa-cicci') cicci++; 
-                    if(d.data().place==='casa-cucci') cucci++; 
+                    else if(d.data().place==='casa-cucci') cucci++; 
+                    else if(d.data().place==='da-decidere') todecide++; 
                 }
             }); 
-            document.getElementById('stats').innerHTML = `<div>💜 Cicci: <strong>${cicci}</strong></div><div>🍷 Cucci: <strong>${cucci}</strong></div>`; 
+            document.getElementById('stats').innerHTML = `
+                <div>💜 Cicci: <strong>${cicci}</strong></div>
+                <div>🍷 Cucci: <strong>${cucci}</strong></div>
+                <div>🤔 Decidere: <strong>${todecide}</strong></div>
+            `; 
         }); 
     }
 </script>
