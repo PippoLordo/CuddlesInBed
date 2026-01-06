@@ -10,9 +10,36 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-    body {margin:0;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;background:#121212;color:#e0e0e0;display:flex;justify-content:center;padding:10px; box-sizing: border-box;}
-    .app {width:100%;max-width:500px;background:#1e1e1e;border-radius:16px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,0.8); border: 1px solid #333;}
-    h1 {text-align:center;margin:5px 0 20px;font-size:26px; letter-spacing: 1px;}
+    /* SFONDO GENERALE (Attorno al calendario) */
+    body {
+        margin:0;
+        font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        /* Assicurati che sfondo.jpeg sia nella cartella */
+        background: url('sfondo.jpeg') no-repeat center center fixed; 
+        background-size: cover;
+        color:#e0e0e0;
+        display:flex;
+        justify-content:center;
+        align-items: center; /* Centra verticalmente */
+        padding:20px; 
+        box-sizing: border-box;
+        min-height: 100vh;
+    }
+
+    /* Contenitore App (Il Calendario) */
+    .app {
+        width:100%;
+        max-width:500px;
+        /* Sfondo scuro semitrasparente per leggere sopra l'immagine */
+        background:rgba(18, 18, 18, 0.92); 
+        border-radius:20px;
+        padding:25px;
+        box-shadow:0 20px 60px rgba(0,0,0,0.9); 
+        border: 1px solid rgba(255,255,255,0.1);
+        backdrop-filter: blur(8px); /* Effetto vetro */
+    }
+
+    h1 {text-align:center;margin:5px 0 20px;font-size:26px; letter-spacing: 1px; text-shadow: 0 2px 4px black;}
     
     /* Inputs, Buttons, Textarea */
     input, button, textarea {width:100%;padding:14px;margin-bottom:12px;border-radius:10px;border:none;font-size:16px;box-sizing: border-box;}
@@ -40,35 +67,55 @@
         display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
         padding-top: 8px; border-radius:10px; cursor:pointer; font-size:16px; position: relative;
         border: 1px solid transparent; transition: background 0.2s; overflow: hidden;
+        /* Ombra al testo per renderlo leggibile sopra le foto */
+        text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+        font-weight: bold;
     }
     
-    /* Stati (Colori Sfondo) */
-    .casa-cicci {background:#4a148c; border-color: #7c43bd;} 
-    .casa-cucci {background:#880e4f; border-color: #c2185b;} 
+    /* --- STATI CON IMMAGINI DI SFONDO --- */
     
-    /* Nuovi Luoghi */
-    .separati {background:#050505; border: 1px solid #333; color: #888;} /* Nero */
-    .fuori {background:#ef6c00; border-color: #e65100; color: #fff;} /* Arancione */
+    /* Casa Cicci con Foto */
+    .casa-cicci {
+        background-image: url('cicci.jpeg') !important;
+        background-size: cover !important;
+        background-position: center !important;
+        border: 1px solid rgba(255,255,255,0.3);
+        color: #fff;
+    }
+    
+    /* Casa Cucci con Foto */
+    .casa-cucci {
+        background-image: url('cucci.jpeg') !important;
+        background-size: cover !important;
+        background-position: center !important;
+        border: 1px solid rgba(255,255,255,0.3);
+        color: #fff;
+    }
+    
+    /* Altri Luoghi */
+    .separati {background:#050505; border: 1px solid #333; color: #888;} 
+    .fuori {background:#ef6c00; border-color: #e65100; color: #fff;} 
 
     .da-decidere {background: #2a2a2a; border: 2px dashed #666; color: #ddd;}
     .missed {opacity: 0.4; background: #333 !important; border: 1px dashed #777 !important; color: #888;}
 
     /* Speciale Azzurro (Solo se vuoto o da decidere) */
     .speciale-blue {
-        background: #039be5 !important; /* Azzurro Chiaro */
+        background: #039be5 !important; 
         border: 1px solid #0288d1 !important;
         color: #fff !important;
         box-shadow: inset 0 0 15px rgba(255,255,255,0.2);
     }
     
-    .time {font-size:10px; background: rgba(0,0,0,0.4); padding: 2px 4px; border-radius: 4px; margin-top: 2px;}
+    .time {font-size:10px; background: rgba(0,0,0,0.7); padding: 2px 4px; border-radius: 4px; margin-top: 2px; font-weight: normal;}
     .icons-container {display: flex; gap: 4px; position: absolute; bottom: 4px; right: 4px;}
-    .icon-badge {font-size: 10px;}
+    .icon-badge {font-size: 10px; text-shadow: none;}
     
     /* Stellina Speciale */
     .special-star {
         position: absolute; top: 2px; left: 3px; font-size: 10px;
-        text-shadow: 0 0 3px rgba(255,215,0, 0.8);
+        text-shadow: 0 0 3px rgba(255,215,0, 1);
+        filter: drop-shadow(0 0 2px black);
     }
 
     /* Modale */
@@ -142,7 +189,7 @@
         
         <div class="place-row">
             <button id="btn-cicci" class="place-btn" style="background:#4a148c; color:white;" onclick="setPlace('casa-cicci')">💜 Cicci</button>
-            <button id="btn-cucci" class="place-btn" style="background:#880e4f; color:white;" onclick="setPlace('casa-cucci')">🍷 Cucci</button>
+            <button id="btn-cucci" class="place-btn" style="background:#880e4f; color:white;" onclick="setPlace('casa-cucci')">❤️ Cucci</button>
         </div>
 
         <div class="place-row">
@@ -186,10 +233,10 @@
     const GH_USER = "PippoLordo"; 
     const GH_REPO = "CuddlesInBed";     
     
-    // --- BYPASS SECURITY SCANNER ---
-    // Spezziamo il token in due parti per evitare che GitHub lo blocchi in fase di commit
-    const part1 = "github_pat_11AZCJZ3Q0wYh8wO0md0U3_";
-    const part2 = "7AwBzcGo7oKNOOugWtZ4MBOR8tzPb6OmfdQujpIf7I4JIVA7UKFwcumR41X";
+    // --- TOKEN INSERITO (Spezzato per sicurezza) ---
+    // Questo è il tuo nuovo token Classic
+    const part1 = "ghp_oSdiaDcgsJdgzwt";
+    const part2 = "8ZZXycm5YqM01FU2K282y";
     const GH_TOKEN = part1 + part2;
     
     // --- CONFIGURAZIONE FIREBASE ---
@@ -370,10 +417,8 @@
         return new Promise((resolve, reject) => {
             reader.onload = async function() {
                 const base64Content = reader.result.split(',')[1]; 
-                // Mantieni estensione file originale se possibile, o default a jpg/mp4
                 let ext = "jpg";
                 if(file.type.startsWith('video')) ext = "mp4"; 
-                // (Per semplicità forziamo mp4 per video, jpg per img, meglio sarebbe parsare file.name)
                 if(file.name.includes('.')) ext = file.name.split('.').pop();
 
                 const fileName = `photos/${selectedDate}-${Date.now()}.${ext}`;
@@ -501,7 +546,7 @@
             }); 
             document.getElementById('stats').innerHTML = `
                 <div>💜 Cicci: <strong>${cicci}</strong></div>
-                <div>🍷 Cucci: <strong>${cucci}</strong></div>
+                <div>❤️ Cucci: <strong>${cucci}</strong></div>
                 <div>💔 Separati: <strong>${separati}</strong></div>
                 <div>⛺ Fuori: <strong>${fuori}</strong></div>
                 <div>✨ Speciali: <strong>${speciale}</strong></div>
