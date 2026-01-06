@@ -12,38 +12,35 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-    /* SFONDO GENERALE (Attorno al calendario) */
+    /* SFONDO GENERALE */
     body {
         margin:0;
         font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        /* Assicurati che sfondo.jpeg sia nella cartella */
         background: url('sfondo.jpeg') no-repeat center center fixed; 
         background-size: cover;
         color:#e0e0e0;
         display:flex;
         justify-content:center;
-        align-items: center; /* Centra verticalmente */
+        align-items: center; 
         padding:20px; 
         box-sizing: border-box;
         min-height: 100vh;
     }
 
-    /* Contenitore App (Il Calendario) */
+    /* Contenitore App */
     .app {
         width:100%;
         max-width:500px;
-        /* Sfondo scuro semitrasparente per leggere sopra l'immagine */
         background:rgba(18, 18, 18, 0.92); 
         border-radius:20px;
         padding:25px;
         box-shadow:0 20px 60px rgba(0,0,0,0.9); 
         border: 1px solid rgba(255,255,255,0.1);
-        backdrop-filter: blur(8px); /* Effetto vetro */
+        backdrop-filter: blur(8px); 
     }
 
     h1 {text-align:center;margin:5px 0 20px;font-size:26px; letter-spacing: 1px; text-shadow: 0 2px 4px black;}
     
-    /* Inputs, Buttons, Textarea */
     input, button, textarea {width:100%;padding:14px;margin-bottom:12px;border-radius:10px;border:none;font-size:16px;box-sizing: border-box;}
     input, textarea {background:#2c2c2c; color:#fff; border: 1px solid #444; font-family: inherit;}
     input:focus, textarea:focus {outline: 2px solid #6a1b9a;}
@@ -59,6 +56,14 @@
     button.tertiary:hover {background: #444; color: #fff; border-color: #777;}
     button.ghost {background: transparent; border: 1px solid #444; color: #aaa;}
     
+    /* Bottone Speciale Menu */
+    button.gold {
+        background: linear-gradient(45deg, #FFD700, #FFA500);
+        color: #000;
+        box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        margin-bottom: 20px;
+    }
+
     /* Calendar Grid */
     .calendar-header {display:flex;justify-content:space-between;align-items:center; margin-bottom: 10px;}
     .calendar {display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:10px;}
@@ -69,83 +74,72 @@
         display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
         padding-top: 8px; border-radius:10px; cursor:pointer; font-size:16px; position: relative;
         border: 1px solid transparent; transition: background 0.2s; overflow: hidden;
-        /* Ombra al testo per renderlo leggibile sopra le foto */
         text-shadow: 0 1px 3px rgba(0,0,0,0.9);
         font-weight: bold;
     }
-    
-    /* --- STATI CON IMMAGINI DI SFONDO --- */
-    
-    /* Casa Cicci con Foto */
-    .casa-cicci {
-        background-image: url('cicci.jpeg') !important;
-        background-size: cover !important;
-        background-position: center !important;
-        border: 1px solid rgba(255,255,255,0.3);
-        color: #fff;
+
+    /* --- EFFETTO OGGI --- */
+    .today {
+        border: 2px solid #00e5ff !important; 
+        box-shadow: 0 0 15px rgba(0, 229, 255, 0.6) !important;
+        z-index: 10;
+        animation: pulseToday 3s infinite;
+    }
+    @keyframes pulseToday {
+        0% { box-shadow: 0 0 5px rgba(0, 229, 255, 0.4); }
+        50% { box-shadow: 0 0 20px rgba(0, 229, 255, 0.8); }
+        100% { box-shadow: 0 0 5px rgba(0, 229, 255, 0.4); }
     }
     
-    /* Casa Cucci con Foto */
-    .casa-cucci {
-        background-image: url('cucci.jpeg') !important;
-        background-size: cover !important;
-        background-position: center !important;
-        border: 1px solid rgba(255,255,255,0.3);
-        color: #fff;
-    }
-    
-    /* Altri Luoghi */
+    /* STATI */
+    .casa-cicci {background-image: url('cicci.jpeg') !important; background-size: cover !important; border: 1px solid rgba(255,255,255,0.3); color: #fff;}
+    .casa-cucci {background-image: url('cucci.jpeg') !important; background-size: cover !important; border: 1px solid rgba(255,255,255,0.3); color: #fff;}
     .separati {background:#050505; border: 1px solid #333; color: #888;} 
     .fuori {background:#ef6c00; border-color: #e65100; color: #fff;} 
-
     .da-decidere {background: #2a2a2a; border: 2px dashed #666; color: #ddd;}
     .missed {opacity: 0.4; background: #333 !important; border: 1px dashed #777 !important; color: #888;}
-
-    /* Speciale Azzurro (Solo se vuoto o da decidere) */
-    .speciale-blue {
-        background: #039be5 !important; 
-        border: 1px solid #0288d1 !important;
-        color: #fff !important;
-        box-shadow: inset 0 0 15px rgba(255,255,255,0.2);
-    }
+    .speciale-blue {background: #039be5 !important; border: 1px solid #0288d1 !important; color: #fff !important; box-shadow: inset 0 0 15px rgba(255,255,255,0.2);}
     
     .time {font-size:10px; background: rgba(0,0,0,0.7); padding: 2px 4px; border-radius: 4px; margin-top: 2px; font-weight: normal;}
     .icons-container {display: flex; gap: 4px; position: absolute; bottom: 4px; right: 4px;}
     .icon-badge {font-size: 10px; text-shadow: none;}
-    
-    /* Stellina Speciale */
-    .special-star {
-        position: absolute; top: 2px; left: 3px; font-size: 10px;
-        text-shadow: 0 0 3px rgba(255,215,0, 1);
-        filter: drop-shadow(0 0 2px black);
-    }
+    .special-star {position: absolute; top: 2px; left: 3px; font-size: 10px; text-shadow: 0 0 3px rgba(255,215,0, 1); filter: drop-shadow(0 0 2px black);}
 
-    /* Modale */
+    /* MODALE (Condivisa) */
     .modal {position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center; z-index: 100;}
     .modal-content {background:#222;padding:25px;border-radius:16px;width:90%;max-width:340px; text-align: center; border: 1px solid #444; max-height: 90vh; overflow-y: auto;}
     
-    /* STILE PULSANTI MODALE */
-    .place-row {display: flex; gap: 10px; margin-bottom: 10px;} 
+    /* Lista Giorni Speciali */
+    #specialListContent { text-align: left; margin-bottom: 15px; max-height: 60vh; overflow-y: auto; }
+    .special-item {
+        background: #333;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        border: 1px solid #444;
+        transition: transform 0.2s;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .special-item:hover { transform: scale(1.02); background: #3a3a3a; border-color: #ffd700; }
+    .special-date { font-weight: bold; color: #ffd700; display: block; font-size: 14px; }
+    .special-desc { font-size: 12px; color: #bbb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
     
+    /* UI Modale Editor */
+    .place-row {display: flex; gap: 10px; margin-bottom: 10px;} 
     .place-btn {flex: 1; opacity: 0.5; border: 2px solid transparent; font-size: 14px; padding: 12px; margin-bottom: 0;}
     .place-btn.active {opacity: 1; border-color: #fff; transform: scale(1.02);}
     
-    /* Toggle Speciale */
-    #btn-speciale {
-        width: 100%; background: #333; border: 1px solid #555; color: #aaa; margin-bottom: 10px;
-    }
-    #btn-speciale.active {
-        background: #ffd700; color: #000; border-color: #fff;
-        box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
-    }
-
+    #btn-speciale {width: 100%; background: #333; border: 1px solid #555; color: #aaa; margin-bottom: 10px;}
+    #btn-speciale.active {background: #ffd700; color: #000; border-color: #fff; box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);}
     #btn-decidere {width: 100%; background: #2a2a2a; border: 1px dashed #666; color: #aaa; opacity: 0.7; margin-bottom: 20px;}
     #btn-decidere.active {opacity: 1; border: 1px solid #fff; background: #333; color: #fff;}
 
     .stats {font-size:11px; margin-top:20px; padding-top:15px; border-top: 1px solid #333; display: flex; flex-wrap: wrap; justify-content: space-around; gap: 8px; color: #bbb;}
     .label {font-size: 12px; display: block; text-align: left; margin-bottom: 4px; color: #aaa; margin-top: 15px;}
     
-    /* Foto/Video Preview */
     .photo-preview {width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; border: 1px solid #444; display: none;}
     .file-input-wrapper {position: relative; overflow: hidden; display: inline-block; width: 100%;}
     .file-input-wrapper input[type=file] {font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0;}
@@ -173,6 +167,8 @@
         <div class="calendar" id="calendar"></div>
 
         <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+            <button class="gold" onclick="openSpecialList()">🌟 MENU GIORNI SPECIALI</button>
+
             <button class="primary" onclick="shiftScheduleFromToday()">😅 Oggi è saltato: Slitta tutto!</button>
             <button class="secondary" onclick="forceBalanceMonth()">⚖️ Riscrivi Mese (Alternanza)</button>
             <button class="tertiary" onclick="setAllToDecide()">🤔 Imposta Mese "Da Decidere"</button>
@@ -180,6 +176,15 @@
         </div>
         
         <div class="stats" id="stats"></div>
+    </div>
+</div>
+
+<div class="modal" id="specialListModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0;">🌟 Ricordi Speciali</h3>
+        <div id="specialListContent">
+            </div>
+        <button class="ghost" onclick="closeSpecialList()">Chiudi</button>
     </div>
 </div>
 
@@ -200,7 +205,6 @@
         </div>
 
         <button id="btn-speciale" onclick="toggleSpecial()">✨ Speciale (⭐)</button>
-        
         <button id="btn-decidere" onclick="setPlace('da-decidere')">🤔 Da Decidere</button>
 
         <label class="label">Orari (Opzionale)</label>
@@ -231,17 +235,12 @@
 </div>
 
 <script>
-    // --- CONFIGURAZIONE GITHUB ---
     const GH_USER = "PippoLordo"; 
     const GH_REPO = "CuddlesInBed";     
-    
-    // --- BYPASS SECURITY SCANNER ---
-    // Spezzato per evitare il blocco di GitHub
     const part1 = "ghp_oSdiaDcgsJdgzwt";
     const part2 = "8ZZXycm5YqM01FU2K282y";
     const GH_TOKEN = part1 + part2;
     
-    // --- CONFIGURAZIONE FIREBASE ---
     const firebaseConfig = {
         apiKey:"AIzaSyCEtnsKsL6EkGmZsgx4lHEHv-CiZ5L3H98",
         authDomain:"aiydiwdwy-aiygiwgwy.firebaseapp.com",
@@ -260,6 +259,7 @@
     let tempPlace=null;
     let tempSpecial=false; 
     let fileToUpload=null;
+    let latestData = {}; 
 
     auth.onAuthStateChanged(user=>{
         if(user){ document.getElementById('login').style.display='none'; document.getElementById('main').style.display='block'; initializeMonth(); }
@@ -272,10 +272,12 @@
         auth.signInWithEmailAndPassword(emailVal,passwordVal).catch(()=> auth.createUserWithEmailAndPassword(emailVal,passwordVal).catch(err=>alert(err.message)));
     }
 
-    // ---------------- RENDER ----------------
     function render(dataFromFirebase=null){
+        if(dataFromFirebase) latestData = dataFromFirebase;
         const cal=document.getElementById('calendar'); cal.innerHTML='';
         const y=current.getFullYear(), m=current.getMonth();
+        const todayDate = new Date(); 
+
         document.getElementById('month').textContent = current.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
 
         ['L','M','M','G','V','S','D'].forEach(d=>{let e=document.createElement('div'); e.textContent=d; e.className='day-name'; cal.appendChild(e);});
@@ -286,25 +288,24 @@
             const key=`${y}-${m+1}-${d}`;
             const el=document.createElement('div'); el.className='day'; el.innerHTML = `<strong>${d}</strong>`; el.onclick=()=>openModal(key);
             
-            if(dataFromFirebase && dataFromFirebase[key]){
-                const data=dataFromFirebase[key];
+            if(y === todayDate.getFullYear() && m === todayDate.getMonth() && d === todayDate.getDate()) {
+                el.classList.add('today');
+            }
+
+            if(latestData && latestData[key]){
+                const data=latestData[key];
                 
                 if(data.missed) {
                     el.classList.add('missed');
                 } else {
-                    // Logica combinata: Speciale + Luogo
                     if(data.isSpecial) {
-                        // Se c'è un luogo specifico, usa quel colore
                         if(data.place && data.place !== 'da-decidere') {
                             el.classList.add(data.place);
                         } else {
-                            // Se non c'è luogo o è "da decidere", usa lo sfondo AZZURRO
                             el.classList.add('speciale-blue');
                         }
-                        // Aggiungi SEMPRE la stellina
                         el.innerHTML += '<span class="special-star">⭐</span>';
                     } else {
-                        // SE NON E' SPECIALE, usa solo il colore del luogo
                         if(data.place) el.classList.add(data.place);
                     }
                 }
@@ -322,15 +323,69 @@
         updateStats();
     }
 
+    let lastRecordedDay = new Date().getDate();
+    setInterval(() => {
+        const now = new Date();
+        if(now.getDate() !== lastRecordedDay) {
+            lastRecordedDay = now.getDate();
+            render(latestData);
+        }
+    }, 60000); 
+
+    // ---------------- LISTA SPECIALI ----------------
+    function openSpecialList(){
+        const listDiv = document.getElementById('specialListContent');
+        listDiv.innerHTML = '';
+        
+        // Filtra e ordina (dal più recente)
+        const specialDays = Object.keys(latestData)
+            .filter(key => latestData[key].isSpecial)
+            .sort((a,b) => new Date(b) - new Date(a));
+
+        if(specialDays.length === 0){
+            listDiv.innerHTML = '<div style="padding:10px; color:#777;">Nessun giorno speciale trovato.</div>';
+        } else {
+            specialDays.forEach(key => {
+                const data = latestData[key];
+                const dateObj = new Date(key);
+                const niceDate = dateObj.toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'long', year:'numeric'});
+                
+                const item = document.createElement('div');
+                item.className = 'special-item';
+                
+                let icons = "";
+                if(data.photoUrl) icons += "📷 ";
+                if(data.note) icons += "📝";
+
+                item.innerHTML = `
+                    <div>
+                        <span class="special-date">⭐ ${niceDate}</span>
+                        <span class="special-desc">${data.note || "Nessuna descrizione"}</span>
+                    </div>
+                    <div style="font-size:16px;">${icons}</div>
+                `;
+                item.onclick = () => {
+                    closeSpecialList();
+                    openModal(key);
+                };
+                listDiv.appendChild(item);
+            });
+        }
+        
+        document.getElementById('specialListModal').style.display = 'flex';
+    }
+
+    function closeSpecialList(){
+        document.getElementById('specialListModal').style.display = 'none';
+    }
+
     // ---------------- MODAL ----------------
     function openModal(date){ 
         selectedDate=date; tempPlace=null; tempSpecial=false; fileToUpload=null;
-        
         const parts = date.split('-');
         const dateObj = new Date(parts[0], parts[1]-1, parts[2]);
         document.getElementById('modalDate').textContent = dateObj.toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'long'});
         
-        // Reset
         document.getElementById('startTime').value = '';
         document.getElementById('endTime').value = '';
         document.getElementById('noteText').value = '';
@@ -388,7 +443,6 @@
         if(tempPlace === 'da-decidere') document.getElementById('btn-decidere').classList.add('active');
     }
 
-    // ---------------- UPLOAD & SAVE ----------------
     function previewFile() {
         const file = document.getElementById('photoInput').files[0];
         const imgPrev = document.getElementById('imgPreview');
@@ -413,8 +467,7 @@
     }
 
     async function uploadToGitHub(file) {
-        if(!GH_TOKEN || GH_TOKEN.includes("INSERISCI")) { alert("Errore: Token GitHub mancante!"); return null; }
-        
+        if(!GH_TOKEN) { alert("Errore: Token GitHub mancante!"); return null; }
         const reader = new FileReader();
         return new Promise((resolve, reject) => {
             reader.onload = async function() {
@@ -422,7 +475,6 @@
                 let ext = "jpg";
                 if(file.type.startsWith('video')) ext = "mp4"; 
                 if(file.name.includes('.')) ext = file.name.split('.').pop();
-
                 const fileName = `photos/${selectedDate}-${Date.now()}.${ext}`;
                 const url = `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${fileName}`;
                 try {
@@ -467,7 +519,6 @@
         }
     }
 
-    // ---------------- SMART TOOLS ----------------
     function forceBalanceMonth(){
         if(!confirm("Riscrivi mese alternato (1 notte a testa)?")) return;
         const y=current.getFullYear(), m=current.getMonth();
@@ -521,13 +572,11 @@
         const days=new Date(y,m+1,0).getDate();
         const batch = db.batch();
         for(let d=1; d<=days; d++){
-            // Reset anche isSpecial: false
             batch.set(db.collection('calendar').doc(`${y}-${m+1}-${d}`), { place: null, start: "", end: "", missed: false, isSpecial: false }, {merge: true});
         }
         batch.commit().then(() => alert("Resettato!"));
     }
 
-    // ---------------- UTILS ----------------
     function initializeMonth(){ db.collection('calendar').onSnapshot(snap=>{ let d={}; snap.docs.forEach(doc=>{d[doc.id]=doc.data()}); render(d); }); }
     function changeMonth(n){ current.setMonth(current.getMonth()+n); initializeMonth(); }
     
