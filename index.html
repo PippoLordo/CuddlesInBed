@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>AIYDIWDWY v2.1</title>
+<title>AIYDIWDWY</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -14,50 +14,60 @@
     .app {width:100%;max-width:500px;background:#1e1e1e;border-radius:16px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,0.8); border: 1px solid #333;}
     h1 {text-align:center;margin:5px 0 20px;font-size:26px; letter-spacing: 1px;}
     
-    /* Inputs & Buttons */
-    input, button {width:100%;padding:14px;margin-bottom:12px;border-radius:10px;border:none;font-size:16px;box-sizing: border-box;}
-    input {background:#2c2c2c; color:#fff; border: 1px solid #444;}
-    input:focus {outline: 2px solid #6a1b9a;}
-    
+    /* Inputs, Buttons, Textarea */
+    input, button, textarea {width:100%;padding:14px;margin-bottom:12px;border-radius:10px;border:none;font-size:16px;box-sizing: border-box;}
+    input, textarea {background:#2c2c2c; color:#fff; border: 1px solid #444; font-family: inherit;}
+    input:focus, textarea:focus {outline: 2px solid #6a1b9a;}
+    textarea {resize: vertical; min-height: 60px;}
+
     button {font-weight: bold; transition: all 0.2s; cursor: pointer;}
     button:active {transform: scale(0.98);}
     button.primary {background:linear-gradient(45deg, #6a1b9a, #8e24aa);color:white;box-shadow: 0 4px 15px rgba(106, 27, 154, 0.4);}
     button.secondary {background:linear-gradient(45deg, #880e4f, #ad1457);color:white;box-shadow: 0 4px 15px rgba(136, 14, 79, 0.4);}
     button.ghost {background: transparent; border: 1px solid #444; color: #aaa;}
-    button.ghost:hover {border-color: #666; color: #fff;}
-
+    
     /* Calendar Grid */
     .calendar-header {display:flex;justify-content:space-between;align-items:center; margin-bottom: 10px;}
     .calendar {display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:10px;}
     .day-name {text-align:center;font-size:12px;opacity:0.6; text-transform: uppercase; letter-spacing: 1px;}
     
     .day {
-        background:#2a2a2a;
-        min-height: 50px;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        border-radius:10px; cursor:pointer; font-size:16px; position: relative;
-        border: 1px solid transparent;
-        transition: background 0.2s;
+        background:#2a2a2a; min-height: 60px;
+        display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+        padding-top: 8px; border-radius:10px; cursor:pointer; font-size:16px; position: relative;
+        border: 1px solid transparent; transition: background 0.2s; overflow: hidden;
     }
     
-    /* Stati dei giorni */
-    .casa-cicci {background:#4a148c; border-color: #7c43bd;} /* Viola scuro */
-    .casa-cucci {background:#880e4f; border-color: #c2185b;} /* Rosso scuro */
+    /* Stati */
+    .casa-cicci {background:#4a148c; border-color: #7c43bd;} 
+    .casa-cucci {background:#880e4f; border-color: #c2185b;} 
     .missed {opacity: 0.4; background: #333 !important; border: 1px dashed #777 !important; color: #888;}
     
     .time {font-size:10px; background: rgba(0,0,0,0.4); padding: 2px 4px; border-radius: 4px; margin-top: 2px;}
     
+    /* Icone (Nota e Foto) */
+    .icons-container {
+        display: flex; gap: 4px; position: absolute; bottom: 4px; right: 4px;
+    }
+    .icon-badge {font-size: 10px;}
+
     /* Modale */
     .modal {position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center; z-index: 100;}
-    .modal-content {background:#222;padding:25px;border-radius:16px;width:90%;max-width:340px; text-align: center; border: 1px solid #444;}
+    .modal-content {background:#222;padding:25px;border-radius:16px;width:90%;max-width:340px; text-align: center; border: 1px solid #444; max-height: 90vh; overflow-y: auto;}
     
-    /* Pulsanti selezione nella modale */
+    /* Selettore Luogo */
     .place-selector {display: flex; gap: 10px; margin-bottom: 10px;}
     .place-btn {flex: 1; opacity: 0.5; border: 2px solid transparent;}
     .place-btn.active {opacity: 1; border-color: #fff; transform: scale(1.05);}
     
     .stats {font-size:13px;margin-top:20px;padding-top:15px; border-top: 1px solid #333; display: flex; justify-content: space-around; color: #bbb;}
-    .label {font-size: 12px; display: block; text-align: left; margin-bottom: 4px; color: #aaa;}
+    .label {font-size: 12px; display: block; text-align: left; margin-bottom: 4px; color: #aaa; margin-top: 10px;}
+    
+    /* Foto Preview */
+    .photo-preview {width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; border: 1px solid #444; display: none;}
+    .file-input-wrapper {position: relative; overflow: hidden; display: inline-block; width: 100%;}
+    .file-input-wrapper input[type=file] {font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0;}
+    .btn-upload {background: #333; color: white; border: 1px dashed #666;}
 </style>
 </head>
 <body>
@@ -82,7 +92,7 @@
 
         <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
             <button class="primary" onclick="shiftScheduleFromToday()">😅 Oggi è saltato: Slitta tutto!</button>
-            <button class="secondary" onclick="forceBalanceMonth()">⚖️ Riscrivi Mese (Alternanza Perfetta)</button>
+            <button class="secondary" onclick="forceBalanceMonth()">⚖️ Riscrivi Mese (Alternanza)</button>
         </div>
         
         <div class="stats" id="stats"></div>
@@ -98,7 +108,7 @@
             <button id="btn-cicci" class="place-btn" style="background:#4a148c; color:white;" onclick="setPlace('casa-cicci')">Cicci</button>
             <button id="btn-cucci" class="place-btn" style="background:#880e4f; color:white;" onclick="setPlace('casa-cucci')">Cucci</button>
         </div>
-        <button class="ghost" style="padding: 8px; font-size:14px; margin-bottom: 15px;" onclick="setPlace(null)">❌ Nessuno (Pulisci)</button>
+        <button class="ghost" style="padding: 8px; font-size:12px; margin-bottom: 5px;" onclick="setPlace(null)">❌ Nessuno (Reset)</button>
 
         <label class="label">Orari (Opzionale)</label>
         <div style="display:flex; gap:10px;">
@@ -106,15 +116,35 @@
             <input type="time" id="endTime">
         </div>
 
-        <div style="display:flex; gap:10px; margin-top: 10px;">
-            <button class="primary" onclick="saveDay()">Salva</button>
+        <label class="label">Note / Diario</label>
+        <textarea id="noteText" placeholder="Scrivi un pensiero..."></textarea>
+
+        <label class="label">Foto del giorno (GitHub)</label>
+        <img id="imgPreview" class="photo-preview" src="">
+        <div class="file-input-wrapper">
+            <button class="btn-upload">📷 Carica / Cambia Foto</button>
+            <input type="file" id="photoInput" accept="image/*" onchange="previewFile()">
+        </div>
+        <input type="hidden" id="currentPhotoUrl">
+
+        <div style="display:flex; gap:10px; margin-top: 20px;">
+            <button id="saveBtn" class="primary" onclick="saveDay()">Salva</button>
             <button class="ghost" onclick="closeModal()">Chiudi</button>
         </div>
-        <button class="ghost" style="margin-bottom:0; font-size:12px; color:#d32f2f;" onclick="markAsMissedSingle()">Segna come saltato solo questo giorno</button>
+        <button class="ghost" style="margin-bottom:0; font-size:12px; color:#d32f2f;" onclick="markAsMissedSingle()">Segna come saltato solo oggi</button>
     </div>
 </div>
 
 <script>
+    // --- CONFIGURAZIONE GITHUB ---
+    // COMPILA QUESTI CAMPI CON I TUOI DATI:
+    const GH_USER = "IL_TUO_USERNAME_GITHUB"; // Es: mariorossi
+    const GH_REPO = "IL_NOME_DELLA_REPO";     // Es: AIYDIWDWY-photos
+    
+    // Il token fornito:
+    const GH_TOKEN = "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"; 
+    
+    // --- CONFIGURAZIONE FIREBASE ---
     const firebaseConfig = {
         apiKey:"AIzaSyCEtnsKsL6EkGmZsgx4lHEHv-CiZ5L3H98",
         authDomain:"aiydiwdwy-aiygiwgwy.firebaseapp.com",
@@ -131,6 +161,7 @@
     let current=new Date();
     let selectedDate=null;
     let tempPlace=null;
+    let fileToUpload=null;
 
     // ---------------- AUTH ----------------
     auth.onAuthStateChanged(user=>{
@@ -144,7 +175,7 @@
     function login(){
         const emailVal=document.getElementById('email').value;
         const passwordVal=document.getElementById('password').value;
-        if(!emailVal || !passwordVal){ alert("Inserisci email e password!"); return; }
+        if(!emailVal || !passwordVal){ alert("Dati mancanti!"); return; }
 
         auth.signInWithEmailAndPassword(emailVal,passwordVal)
             .catch(()=> auth.createUserWithEmailAndPassword(emailVal,passwordVal)
@@ -176,15 +207,19 @@
             if(dataFromFirebase && dataFromFirebase[key]){
                 const data=dataFromFirebase[key];
                 
-                if(data.missed) {
-                    el.classList.add('missed');
-                } else if(data.place) {
-                    el.classList.add(data.place);
-                }
+                if(data.missed) el.classList.add('missed');
+                else if(data.place) el.classList.add(data.place);
                 
                 if(!data.missed && data.start && data.end){
                     el.innerHTML+=`<div class='time'>${data.start}-${data.end}</div>`;
                 }
+
+                // Icone per Note e Foto
+                let iconsHtml = '<div class="icons-container">';
+                if(data.note && data.note.trim() !== "") iconsHtml += '<span class="icon-badge">📝</span>';
+                if(data.photoUrl) iconsHtml += '<span class="icon-badge">📷</span>';
+                iconsHtml += '</div>';
+                el.innerHTML += iconsHtml;
             }
             cal.appendChild(el);
         }
@@ -195,13 +230,23 @@
     function openModal(date){ 
         selectedDate=date; 
         tempPlace=null; 
+        fileToUpload=null;
         
         const parts = date.split('-');
         const dateObj = new Date(parts[0], parts[1]-1, parts[2]);
-        document.getElementById('modalDate').textContent = dateObj.toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long'});
+        document.getElementById('modalDate').textContent = dateObj.toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'long'});
         
+        // Reset Fields
         document.getElementById('startTime').value = '';
         document.getElementById('endTime').value = '';
+        document.getElementById('noteText').value = '';
+        document.getElementById('photoInput').value = '';
+        document.getElementById('imgPreview').style.display = 'none';
+        document.getElementById('imgPreview').src = '';
+        document.getElementById('currentPhotoUrl').value = '';
+        document.getElementById('saveBtn').textContent = "Salva";
+        document.getElementById('saveBtn').disabled = false;
+
         updatePlaceUI();
         
         db.collection('calendar').doc(date).get().then(doc => {
@@ -210,6 +255,13 @@
                 if(data.place) setPlace(data.place);
                 if(data.start) document.getElementById('startTime').value = data.start;
                 if(data.end) document.getElementById('endTime').value = data.end;
+                if(data.note) document.getElementById('noteText').value = data.note;
+                
+                if(data.photoUrl) {
+                    document.getElementById('currentPhotoUrl').value = data.photoUrl;
+                    document.getElementById('imgPreview').src = data.photoUrl;
+                    document.getElementById('imgPreview').style.display = 'block';
+                }
             }
         });
 
@@ -217,11 +269,7 @@
     }
 
     function closeModal(){ document.getElementById('modal').style.display='none'; }
-
-    function setPlace(p){ 
-        tempPlace=p; 
-        updatePlaceUI();
-    }
+    function setPlace(p){ tempPlace=p; updatePlaceUI(); }
 
     function updatePlaceUI(){
         document.getElementById('btn-cicci').classList.remove('active');
@@ -230,30 +278,117 @@
         if(tempPlace === 'casa-cucci') document.getElementById('btn-cucci').classList.add('active');
     }
 
-    function saveDay(){
-        // NESSUN CONTROLLO SU tempPlace: Permette il salvataggio vuoto (null)
+    // ---------------- FOTO & UPLOAD (GITHUB) ----------------
+    function previewFile() {
+        const file = document.getElementById('photoInput').files[0];
+        const preview = document.getElementById('imgPreview');
         
-        const s = document.getElementById('startTime').value;
-        const e = document.getElementById('endTime').value;
-
-        db.collection('calendar').doc(selectedDate).set({
-            place: tempPlace || null, // Salva null se vuoto
-            start: s ? s : "", 
-            end: e ? e : "",
-            missed: false
-        }).then(closeModal);
-    }
-
-    function markAsMissedSingle() {
-        if(confirm("Segnare questo giorno come 'Saltato' senza spostare gli altri?")) {
-            db.collection('calendar').doc(selectedDate).update({missed: true, place: null, start: "", end: ""}).then(closeModal);
+        if (file) {
+            fileToUpload = file;
+            const reader = new FileReader();
+            reader.onload = function(e){
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
         }
     }
 
-    // ---------------- FUNZIONI SMART ----------------
-    function forceBalanceMonth(){
-        if(!confirm("Questo riscriverà l'intero mese visualizzato alternando le case (1 notte a testa). Continuare?")) return;
+    async function uploadToGitHub(file) {
+        if(GH_USER === "IL_TUO_USERNAME_GITHUB" || GH_REPO === "IL_NOME_DELLA_REPO") {
+            alert("ATTENZIONE: Devi modificare il codice inserendo il tuo NOME UTENTE e la REPOSITORY nelle prime righe dello script!");
+            return null;
+        }
 
+        const reader = new FileReader();
+        return new Promise((resolve, reject) => {
+            reader.onload = async function() {
+                const base64Content = reader.result.split(',')[1]; // Rimuove "data:image..."
+                const fileName = `photos/${selectedDate}-${Date.now()}.jpg`;
+                const url = `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${fileName}`;
+                
+                try {
+                    const res = await fetch(url, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${GH_TOKEN}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: `Upload foto ${selectedDate}`,
+                            content: base64Content
+                        })
+                    });
+                    const json = await res.json();
+                    
+                    if(!res.ok) throw new Error(json.message || "Errore upload");
+
+                    if(json.content && json.content.download_url) {
+                        resolve(json.content.download_url);
+                    } else {
+                        // Fallback URL Raw
+                        resolve(`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${fileName}`);
+                    }
+                } catch(e) {
+                    console.error(e);
+                    alert("Errore upload GitHub: " + e.message);
+                    resolve(null);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function saveDay(){
+        const btn = document.getElementById('saveBtn');
+        btn.textContent = "Salvataggio...";
+        btn.disabled = true;
+
+        let finalPhotoUrl = document.getElementById('currentPhotoUrl').value;
+
+        // Se c'è un nuovo file, caricalo su GitHub
+        if(fileToUpload) {
+            btn.textContent = "Caricamento foto su GitHub...";
+            const uploadedUrl = await uploadToGitHub(fileToUpload);
+            if(uploadedUrl) finalPhotoUrl = uploadedUrl;
+            else {
+                btn.textContent = "Errore Upload";
+                btn.disabled = false;
+                return; // Ferma il salvataggio se l'upload fallisce
+            }
+        }
+
+        const s = document.getElementById('startTime').value;
+        const e = document.getElementById('endTime').value;
+        const n = document.getElementById('noteText').value;
+
+        db.collection('calendar').doc(selectedDate).set({
+            place: tempPlace || null,
+            start: s || "", 
+            end: e || "",
+            note: n || "",
+            photoUrl: finalPhotoUrl || null,
+            missed: false
+        }).then(() => {
+            closeModal();
+            btn.textContent = "Salva";
+            btn.disabled = false;
+        });
+    }
+
+    function markAsMissedSingle() {
+        if(confirm("Segna come 'Saltato'?")) {
+            // Nota: mantiene la foto e la nota se vuoi, altrimenti resetta tutto
+            db.collection('calendar').doc(selectedDate).update({
+                missed: true, place: null, start:"", end:"" 
+                // Non cancello note/foto in caso servano come memoria storica
+            }).then(closeModal);
+        }
+    }
+
+    // ---------------- LOGICHE AVANZATE ----------------
+    function forceBalanceMonth(){
+        if(!confirm("Riscrivi mese alternato (1 notte a testa)?")) return;
         const y=current.getFullYear(), m=current.getMonth();
         const days=new Date(y,m+1,0).getDate();
         const batch = db.batch();
@@ -262,19 +397,17 @@
             const key=`${y}-${m+1}-${d}`;
             const place = (d % 2 !== 0) ? 'casa-cicci' : 'casa-cucci';
             const ref = db.collection('calendar').doc(key);
-            batch.set(ref, { place: place, start: "", end: "", missed: false });
+            // Attenzione: .set con merge:true preserverebbe note/foto esistenti
+            batch.set(ref, { place: place, missed: false }, {merge: true}); 
         }
         batch.commit().then(() => alert("Calendario bilanciato!"));
     }
 
     function shiftScheduleFromToday(){
         const today = new Date();
-        const y = today.getFullYear();
-        const m = today.getMonth() + 1;
-        const d = today.getDate();
-        const todayKey = `${y}-${m}-${d}`;
+        const todayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
 
-        if(!confirm(`Segnare oggi (${d}/${m}) come 'Saltato' e spostare tutti i piani futuri di un giorno?`)) return;
+        if(!confirm("Segnare OGGI saltato e slittare tutto il futuro?")) return;
 
         db.collection('calendar').orderBy(firebase.firestore.FieldPath.documentId()).get().then(snap => {
             const updates = {};
@@ -286,11 +419,18 @@
                 if (key === todayKey) {
                     foundToday = true;
                     previousData = doc.data(); 
-                    updates[key] = { missed: true, place: null, start: "", end: "" };
+                    // Oggi diventa missed, ma MANTENIAMO foto e note se c'erano
+                    updates[key] = { ...previousData, missed: true, place: null, start: "", end: "" };
                 } 
                 else if (foundToday) {
                     const currentData = doc.data();
-                    if (previousData) updates[key] = previousData;
+                    if (previousData) {
+                        // Spostiamo tutto il pacchetto dati (note, orari, place) al giorno dopo
+                        updates[key] = {
+                            ...previousData,
+                            missed: false // Assicuriamo che il nuovo giorno non sia missed
+                        };
+                    }
                     previousData = currentData;
                 }
             });
@@ -300,7 +440,7 @@
                 batch.set(db.collection('calendar').doc(k), updates[k]);
             });
             return batch.commit();
-        }).then(() => alert("Piani slittati con successo!"));
+        }).then(() => alert("Piani slittati!"));
     }
 
     // ---------------- UTILS ----------------
@@ -311,27 +451,19 @@
             render(data);
         });
     }
-
-    function changeMonth(n){ 
-        current.setMonth(current.getMonth()+n); 
-        initializeMonth(); 
-    }
-
+    function changeMonth(n){ current.setMonth(current.getMonth()+n); initializeMonth(); }
     function updateStats(){ 
         const y=current.getFullYear(), m=current.getMonth();
         db.collection('calendar').get().then(snap=>{ 
             let cicci=0, cucci=0; 
             snap.forEach(d=>{ 
-                const dateParts = d.id.split('-');
-                if(parseInt(dateParts[0]) === y && parseInt(dateParts[1]) === m+1 && !d.data().missed){
+                const p = d.id.split('-');
+                if(parseInt(p[0])===y && parseInt(p[1])===m+1 && !d.data().missed){
                     if(d.data().place==='casa-cicci') cicci++; 
                     if(d.data().place==='casa-cucci') cucci++; 
                 }
             }); 
-            document.getElementById('stats').innerHTML = `
-                <div>💜 Cicci: <strong>${cicci}</strong></div>
-                <div>🍷 Cucci: <strong>${cucci}</strong></div>
-            `; 
+            document.getElementById('stats').innerHTML = `<div>💜 Cicci: <strong>${cicci}</strong></div><div>🍷 Cucci: <strong>${cucci}</strong></div>`; 
         }); 
     }
 </script>
