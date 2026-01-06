@@ -150,13 +150,15 @@
 </div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyCEtnsKsL6EkGmZsgx4lHEHv-CiZ5L3H98",
-  authDomain: "aiydiwdwy-aiygiwgwy.firebaseapp.com",
-  projectId: "aiydiwdwy-aiygiwgwy",
-  storageBucket: "aiydiwdwy-aiygiwgwy.firebasestorage.app",
-  messagingSenderId: "510624883472",
-  appId: "1:510624883472:web:d85e00839e26c8e41c3b95",;
+  // ------------------ FIREBASE CONFIG ------------------
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEtnsKsL6EkGmZsgx4lHEHv-CiZ5L3H98",
+    authDomain: "aiydiwdwy-aiygiwgwy.firebaseapp.com",
+    projectId: "aiydiwdwy-aiygiwgwy",
+    storageBucket: "aiydiwdwy-aiygiwgwy.firebasestorage.app",
+    messagingSenderId: "510624883472",
+    appId: "1:510624883472:web:d85e00839e26c8e41c3b95"
+  };
 
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
@@ -164,7 +166,9 @@ const firebaseConfig = {
 
   let current = new Date();
   let selectedDate = null;
+  let tempPlace = null;
 
+  // ------------------ AUTH STATE ------------------
   auth.onAuthStateChanged(user => {
     if (user) {
       document.getElementById('login').style.display = 'none';
@@ -173,11 +177,41 @@ const firebaseConfig = {
     }
   });
 
+  // ------------------ LOGIN / REGISTRAZIONE ------------------
   function login() {
-    auth.signInWithEmailAndPassword(email.value, password.value)
-      .catch(() => auth.createUserWithEmailAndPassword(email.value, password.value));
+    const emailVal = document.getElementById('email').value;
+    const passwordVal = document.getElementById('password').value;
+
+    if (!emailVal || !passwordVal) {
+      alert("Inserisci email e password!");
+      return;
+    }
+
+    auth.signInWithEmailAndPassword(emailVal, passwordVal)
+      .then(() => {
+        console.log("Login riuscito!");
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('main').style.display = 'block';
+        render();
+      })
+      .catch(error => {
+        console.log("Login fallito:", error.message);
+        // Se login fallisce, prova a creare l'account
+        auth.createUserWithEmailAndPassword(emailVal, passwordVal)
+          .then(() => {
+            console.log("Account creato con successo!");
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('main').style.display = 'block';
+            render();
+          })
+          .catch(err => {
+            console.log("Errore creazione account:", err.message);
+            alert("Errore: " + err.message);
+          });
+      });
   }
 
+  // ------------------ CALENDAR ------------------
   function render() {
     const cal = document.getElementById('calendar');
     cal.innerHTML = '';
@@ -187,68 +221,77 @@ const firebaseConfig = {
     document.getElementById('month').textContent = current.toLocaleDateString('it-IT', {month:'long',year:'numeric'});
 
     ['L','M','M','G','V','S','D'].forEach(d=>{
-      const e=document.createElement('div');e.textContent=d;e.className='day-name';cal.appendChild(e);
+      const e = document.createElement('div');
+      e.textContent = d;
+      e.className = 'day-name';
+      cal.appendChild(e);
     });
 
-    const first = new Date(y,m,1).getDay()||7;
+    const first = new Date(y,m,1).getDay() || 7;
     for(let i=1;i<first;i++) cal.appendChild(document.createElement('div'));
 
     const days = new Date(y,m+1,0).getDate();
-    for(let d=1;d<=days;d++){
-      const key=`${y}-${m+1}-${d}`;
-      const el=document.createElement('div');
-      el.className='day';
-      el.textContent=d;
-      el.onclick=()=>openModal(key);
+    for(let d=1; d<=days; d++){
+      const key = `${y}-${m+1}-${d}`;
+      const el = document.createElement('div');
+      el.className = 'day';
+      el.textContent = d;
+      el.onclick = () => openModal(key);
 
       db.collection('calendar').doc(key).get().then(doc=>{
         if(doc.exists){
-          const data=doc.data();
-          el.classList.add(data.place);
+          const data = doc.data();
+          if(data.place) el.classList.add(data.place);
           if(data.missed) el.classList.add('missed');
-          if(data.start) el.innerHTML+=`<div class='time'>${data.start}-${data.end}</div>`;
+          if(data.start && data.end) el.innerHTML += `<div class='time'>${data.start}-${data.end}</div>`;
         }
       });
+
       cal.appendChild(el);
     }
+
     updateStats();
   }
 
   function openModal(date){
-    selectedDate=date;
-    document.getElementById('modalDate').textContent=date;
-    modal.style.display='flex';
+    selectedDate = date;
+    document.getElementById('modalDate').textContent = date;
+    document.getElementById('modal').style.display = 'flex';
   }
 
-  function closeModal(){ modal.style.display='none'; }
-
-  let tempPlace=null;
-  function setPlace(p){ tempPlace=p; }
+  function closeModal(){ document.getElementById('modal').style.display = 'none'; }
+  function setPlace(p){ tempPlace = p; }
 
   function saveDay(){
+    if(!tempPlace){
+      alert("Seleziona Casa tua o Casa sua");
+      return;
+    }
+
     db.collection('calendar').doc(selectedDate).set({
       place: tempPlace,
-      start: startTime.value,
-      end: endTime.value,
+      start: document.getElementById('startTime').value,
+      end: document.getElementById('endTime').value,
       missed: false
+    }).then(()=>{
+      closeModal();
+      render();
     });
-    closeModal();
-    render();
   }
 
   function autoReschedule(){
     db.collection('calendar').orderBy(firebase.firestore.FieldPath.documentId()).get().then(snap=>{
-      snap.forEach(doc=>{
-        const data=doc.data();
+      for(const doc of snap.docs){
+        const data = doc.data();
         if(!data.missed){
           doc.ref.update({missed:true});
-          const d=new Date(doc.id);
+          const d = new Date(doc.id);
           d.setDate(d.getDate()+1);
-          const k=`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
-          db.collection('calendar').doc(k).set({...data,missed:false});
-          return;
+          const k = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+          db.collection('calendar').doc(k).set({...data, missed:false});
+          break;
         }
-      });
+      }
     });
   }
 
@@ -257,8 +300,11 @@ const firebaseConfig = {
   function updateStats(){
     db.collection('calendar').get().then(snap=>{
       let mine=0, hers=0;
-      snap.forEach(d=>{ if(d.data().place==='my-house') mine++; if(d.data().place==='her-house') hers++; });
-      stats.textContent=`📊 Casa tua: ${mine} notti | Casa sua: ${hers} notti`;
+      snap.forEach(d=>{
+        if(d.data().place==='my-house') mine++;
+        if(d.data().place==='her-house') hers++;
+      });
+      document.getElementById('stats').textContent=`📊 Casa tua: ${mine} notti | Casa sua: ${hers} notti`;
     });
   }
 </script>
