@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>AIYDIWDWY v2.0</title>
+<title>AIYDIWDWY v2.1</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -19,12 +19,13 @@
     input {background:#2c2c2c; color:#fff; border: 1px solid #444;}
     input:focus {outline: 2px solid #6a1b9a;}
     
-    button {font-weight: bold; transition: all 0.2s;}
+    button {font-weight: bold; transition: all 0.2s; cursor: pointer;}
     button:active {transform: scale(0.98);}
     button.primary {background:linear-gradient(45deg, #6a1b9a, #8e24aa);color:white;box-shadow: 0 4px 15px rgba(106, 27, 154, 0.4);}
     button.secondary {background:linear-gradient(45deg, #880e4f, #ad1457);color:white;box-shadow: 0 4px 15px rgba(136, 14, 79, 0.4);}
     button.ghost {background: transparent; border: 1px solid #444; color: #aaa;}
-    
+    button.ghost:hover {border-color: #666; color: #fff;}
+
     /* Calendar Grid */
     .calendar-header {display:flex;justify-content:space-between;align-items:center; margin-bottom: 10px;}
     .calendar {display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:10px;}
@@ -51,7 +52,7 @@
     .modal-content {background:#222;padding:25px;border-radius:16px;width:90%;max-width:340px; text-align: center; border: 1px solid #444;}
     
     /* Pulsanti selezione nella modale */
-    .place-selector {display: flex; gap: 10px; margin-bottom: 15px;}
+    .place-selector {display: flex; gap: 10px; margin-bottom: 10px;}
     .place-btn {flex: 1; opacity: 0.5; border: 2px solid transparent;}
     .place-btn.active {opacity: 1; border-color: #fff; transform: scale(1.05);}
     
@@ -97,6 +98,7 @@
             <button id="btn-cicci" class="place-btn" style="background:#4a148c; color:white;" onclick="setPlace('casa-cicci')">Cicci</button>
             <button id="btn-cucci" class="place-btn" style="background:#880e4f; color:white;" onclick="setPlace('casa-cucci')">Cucci</button>
         </div>
+        <button class="ghost" style="padding: 8px; font-size:14px; margin-bottom: 15px;" onclick="setPlace(null)">❌ Nessuno (Pulisci)</button>
 
         <label class="label">Orari (Opzionale)</label>
         <div style="display:flex; gap:10px;">
@@ -154,14 +156,11 @@
         const cal=document.getElementById('calendar'); cal.innerHTML='';
         const y=current.getFullYear(), m=current.getMonth();
         
-        // Titolo Mese
         const monthName = current.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
         document.getElementById('month').textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
-        // Intestazione giorni
         ['L','M','M','G','V','S','D'].forEach(d=>{let e=document.createElement('div'); e.textContent=d; e.className='day-name'; cal.appendChild(e);});
         
-        // Spazi vuoti inizio mese
         const first=new Date(y,m,1).getDay()||7; 
         for(let i=1;i<first;i++) cal.appendChild(document.createElement('div'));
         
@@ -195,19 +194,16 @@
     // ---------------- MODAL LOGIC ----------------
     function openModal(date){ 
         selectedDate=date; 
-        tempPlace=null; // Reset selezione
+        tempPlace=null; 
         
-        // Formatta data leggibile
         const parts = date.split('-');
         const dateObj = new Date(parts[0], parts[1]-1, parts[2]);
         document.getElementById('modalDate').textContent = dateObj.toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long'});
         
-        // Reset UI
         document.getElementById('startTime').value = '';
         document.getElementById('endTime').value = '';
         updatePlaceUI();
         
-        // Carica dati esistenti se ci sono
         db.collection('calendar').doc(date).get().then(doc => {
             if(doc.exists){
                 const data = doc.data();
@@ -235,14 +231,13 @@
     }
 
     function saveDay(){
-        if(!tempPlace){ alert("Per favore seleziona Casa Cicci o Casa Cucci"); return; }
+        // NESSUN CONTROLLO SU tempPlace: Permette il salvataggio vuoto (null)
         
-        // Orari opzionali: se vuoti salviamo stringa vuota
         const s = document.getElementById('startTime').value;
         const e = document.getElementById('endTime').value;
 
         db.collection('calendar').doc(selectedDate).set({
-            place: tempPlace,
+            place: tempPlace || null, // Salva null se vuoto
             start: s ? s : "", 
             end: e ? e : "",
             missed: false
@@ -256,10 +251,8 @@
     }
 
     // ---------------- FUNZIONI SMART ----------------
-
-    // 1. Bilanciamento Alternato Perfetto (A-B-A-B)
     function forceBalanceMonth(){
-        if(!confirm("Questo riscriverà l'intero mese visualizzato alternando le case (1 notte a testa) partendo dal giorno 1. Continuare?")) return;
+        if(!confirm("Questo riscriverà l'intero mese visualizzato alternando le case (1 notte a testa). Continuare?")) return;
 
         const y=current.getFullYear(), m=current.getMonth();
         const days=new Date(y,m+1,0).getDate();
@@ -267,17 +260,13 @@
 
         for(let d=1; d<=days; d++){
             const key=`${y}-${m+1}-${d}`;
-            // Pari = Cicci, Dispari = Cucci (o viceversa, si può cambiare)
             const place = (d % 2 !== 0) ? 'casa-cicci' : 'casa-cucci';
             const ref = db.collection('calendar').doc(key);
             batch.set(ref, { place: place, start: "", end: "", missed: false });
         }
-
-        batch.commit().then(() => alert("Calendario bilanciato perfettamente!"));
+        batch.commit().then(() => alert("Calendario bilanciato!"));
     }
 
-    // 2. Slittamento Intelligente (Shift Schedule)
-    // Se oggi non abbiamo seguito il piano, segna oggi come missed e sposta tutto di +1
     function shiftScheduleFromToday(){
         const today = new Date();
         const y = today.getFullYear();
@@ -285,41 +274,27 @@
         const d = today.getDate();
         const todayKey = `${y}-${m}-${d}`;
 
-        if(!confirm(`Segnare oggi (${d}/${m}) come 'Saltato' e spostare tutti i piani futuri di un giorno in avanti?`)) return;
+        if(!confirm(`Segnare oggi (${d}/${m}) come 'Saltato' e spostare tutti i piani futuri di un giorno?`)) return;
 
         db.collection('calendar').orderBy(firebase.firestore.FieldPath.documentId()).get().then(snap => {
             const updates = {};
             let foundToday = false;
             let previousData = null;
 
-            // Iteriamo tutti i documenti
-            snap.docs.forEach((doc, index) => {
+            snap.docs.forEach((doc) => {
                 const key = doc.id;
-                
-                // Logica: Troviamo oggi.
                 if (key === todayKey) {
                     foundToday = true;
-                    // Salviamo il piano di oggi per darlo a domani
                     previousData = doc.data(); 
-                    // Oggi diventa missed
                     updates[key] = { missed: true, place: null, start: "", end: "" };
                 } 
                 else if (foundToday) {
-                    // Siamo nel futuro.
-                    // Prendiamo il piano corrente di questo giorno per passarlo al prossimo
                     const currentData = doc.data();
-                    
-                    // Assegniamo a questo giorno il piano del giorno precedente
-                    if (previousData) {
-                        updates[key] = previousData;
-                    }
-                    
-                    // Aggiorniamo previousData per il prossimo giro
+                    if (previousData) updates[key] = previousData;
                     previousData = currentData;
                 }
             });
 
-            // Applichiamo le modifiche in batch (o loop se batch è troppo complesso qui)
             const batch = db.batch();
             Object.keys(updates).forEach(k => {
                 batch.set(db.collection('calendar').doc(k), updates[k]);
@@ -330,7 +305,6 @@
 
     // ---------------- UTILS ----------------
     function initializeMonth(){
-        // Listener Realtime
         db.collection('calendar').onSnapshot(snapshot=>{
             let data={};
             snapshot.docs.forEach(doc=>{ data[doc.id]=doc.data(); });
@@ -340,13 +314,11 @@
 
     function changeMonth(n){ 
         current.setMonth(current.getMonth()+n); 
-        // Triggera un re-render manuale vuoto finché il listener non scatta o per refreshare UI date
         initializeMonth(); 
     }
 
     function updateStats(){ 
         const y=current.getFullYear(), m=current.getMonth();
-        // Conta solo i giorni del mese visualizzato
         db.collection('calendar').get().then(snap=>{ 
             let cicci=0, cucci=0; 
             snap.forEach(d=>{ 
