@@ -1,0 +1,9 @@
+let cachedToken=null,cachedUntil=0;
+async function token(){const id=process.env.SPOTIFY_CLIENT_ID,secret=process.env.SPOTIFY_CLIENT_SECRET;if(!id||!secret)throw new Error('SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET non configurati su Netlify');if(cachedToken&&Date.now()<cachedUntil)return cachedToken;const body=new URLSearchParams({grant_type:'client_credentials',client_id:id,client_secret:secret});const r=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const d=await r.json();if(!r.ok)throw new Error(d.error_description||'Autenticazione Spotify fallita');cachedToken=d.access_token;cachedUntil=Date.now()+Math.max(60000,(Number(d.expires_in||3600)-90)*1000);return cachedToken}
+async function api(path){const t=await token();const r=await fetch('https://api.spotify.com/v1'+path,{headers:{Authorization:'Bearer '+t}});const d=await r.json();if(!r.ok)throw new Error(d.error?.message||'Errore Spotify');return d}
+exports.handler=async event=>{try{const q=event.queryStringParameters||{},action=q.action||'';
+ if(action==='search'){const term=String(q.q||'').trim();if(!term)return json(400,{error:'Ricerca vuota'});const page=Math.max(1,Number(q.page)||1),offset=(page-1)*10;const d=await api('/search?q='+encodeURIComponent(term)+'&type=album,artist,track&limit=10&offset='+offset);return json(200,d);}
+ if(action==='details'){const type=['album','artist','track'].includes(q.type)?q.type:null,id=String(q.id||'').replace(/[^A-Za-z0-9]/g,'');if(!type||!id)return json(400,{error:'Parametri non validi'});return json(200,await api('/'+type+'s/'+id));}
+ return json(400,{error:'Azione non valida'});
+ }catch(e){return json(502,{error:e.message||'Spotify non raggiungibile'})}};
+function json(statusCode,body){return{statusCode,headers:{'content-type':'application/json; charset=utf-8','cache-control':'public, max-age=120'},body:JSON.stringify(body)}}
