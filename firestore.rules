@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function allowedUser() {
+      return request.auth != null
+        && request.auth.token.email in [
+          'cucci@cuddles.app',
+          'cicci@cuddles.app'
+        ];
+    }
+
+    function ownsProfile(username) {
+      return allowedUser() && (
+        (username == 'cucci' && request.auth.token.email == 'cucci@cuddles.app') ||
+        (username == 'cicci' && request.auth.token.email == 'cicci@cuddles.app')
+      );
+    }
+
+    match /calendar/{dayId} {
+      allow read, write: if allowedUser();
+    }
+
+    match /photos/{photoId} {
+      allow read, write: if allowedUser();
+    }
+
+    // Diario privato condiviso: solo i due account autorizzati.
+    match /diaryMessages/{messageId} {
+      allow read, create, update: if allowedUser();
+      allow delete: if false;
+    }
+
+    // Le due librerie sono leggibili da entrambi per creare le sezioni
+    // "visto/letto dall'altro" e "visto/letto da entrambi".
+    // Ognuno può però modificare soltanto la propria.
+    match /users/{username}/{document=**} {
+      allow read: if allowedUser();
+      allow create, update, delete: if ownsProfile(username);
+    }
+  }
+}

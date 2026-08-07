@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>AIYDIWDWY</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="icon" type="image/x-icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+    /* SFONDO GENERALE */
+    body {
+        margin:0;
+        font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: url('sfondo.jpeg') no-repeat center center fixed; 
+        background-size: cover;
+        color:#e0e0e0;
+        display:flex;
+        justify-content:center;
+        align-items: center; 
+        padding:20px; 
+        box-sizing: border-box;
+        min-height: 100vh;
+    }
+
+    /* Contenitore App */
+    .app {
+        width:100%;
+        max-width:500px;
+        background:rgba(18, 18, 18, 0.92); 
+        border-radius:20px;
+        padding:25px;
+        box-shadow:0 20px 60px rgba(0,0,0,0.9); 
+        border: 1px solid rgba(255,255,255,0.1);
+        backdrop-filter: blur(8px); 
+    }
+
+    h1 {text-align:center;margin:5px 0 20px;font-size:26px; letter-spacing: 1px; text-shadow: 0 2px 4px black;}
+    
+    input, button, textarea {width:100%;padding:14px;margin-bottom:12px;border-radius:10px;border:none;font-size:16px;box-sizing: border-box;}
+    input, textarea {background:#2c2c2c; color:#fff; border: 1px solid #444; font-family: inherit;}
+    input:focus, textarea:focus {outline: 2px solid #6a1b9a;}
+    textarea {resize: vertical; min-height: 80px;}
+
+    button {font-weight: bold; transition: all 0.2s; cursor: pointer;}
+    button:active {transform: scale(0.98);}
+    
+    /* Stili Bottoni */
+    button.primary {background:linear-gradient(45deg, #6a1b9a, #8e24aa);color:white;box-shadow: 0 4px 15px rgba(106, 27, 154, 0.4);}
+    button.secondary {background:linear-gradient(45deg, #880e4f, #ad1457);color:white;box-shadow: 0 4px 15px rgba(136, 14, 79, 0.4);}
+    button.tertiary {background: #333; color: #ccc; border: 1px dashed #555;}
+    button.tertiary:hover {background: #444; color: #fff; border-color: #777;}
+    button.ghost {background: transparent; border: 1px solid #444; color: #aaa;}
+    
+    /* Bottone Speciale Menu */
+    button.gold {
+        background: linear-gradient(45deg, #FFD700, #FFA500);
+        color: #000;
+        box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        margin-bottom: 20px;
+    }
+
+    /* Calendar Grid */
+    .calendar-header {display:flex;justify-content:space-between;align-items:center; margin-bottom: 10px;}
+    .calendar {display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:10px;}
+    .day-name {text-align:center;font-size:12px;opacity:0.6; text-transform: uppercase; letter-spacing: 1px;}
+    
+    .day {
+        background:#2a2a2a; min-height: 60px;
+        display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+        padding-top: 8px; border-radius:10px; cursor:pointer; font-size:16px; position: relative;
+        border: 1px solid transparent; transition: background 0.2s; overflow: hidden;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+        font-weight: bold;
+    }
+
+    /* --- EFFETTO OGGI --- */
+    .today {
+        border: 2px solid #00e5ff !important; 
+        box-shadow: 0 0 15px rgba(0, 229, 255, 0.6) !important;
+        z-index: 10;
+        animation: pulseToday 3s infinite;
+    }
+    @keyframes pulseToday {
+        0% { box-shadow: 0 0 5px rgba(0, 229, 255, 0.4); }
+        50% { box-shadow: 0 0 20px rgba(0, 229, 255, 0.8); }
+        100% { box-shadow: 0 0 5px rgba(0, 229, 255, 0.4); }
+    }
+    
+    /* STATI */
+    .casa-cicci {background-image: url('cicci.jpeg') !important; background-size: cover !important; border: 1px solid rgba(255,255,255,0.3); color: #fff;}
+    .casa-cucci {background-image: url('cucci.jpeg') !important; background-size: cover !important; border: 1px solid rgba(255,255,255,0.3); color: #fff;}
+    .separati {background:#050505; border: 1px solid #333; color: #888;} 
+    .fuori {background:#ef6c00; border-color: #e65100; color: #fff;} 
+    .da-decidere {background: #2a2a2a; border: 2px dashed #666; color: #ddd;}
+    .missed {opacity: 0.4; background: #333 !important; border: 1px dashed #777 !important; color: #888;}
+    .speciale-blue {background: #039be5 !important; border: 1px solid #0288d1 !important; color: #fff !important; box-shadow: inset 0 0 15px rgba(255,255,255,0.2);}
+    
+    .time {font-size:10px; background: rgba(0,0,0,0.7); padding: 2px 4px; border-radius: 4px; margin-top: 2px; font-weight: normal;}
+    .icons-container {display: flex; gap: 4px; position: absolute; bottom: 4px; right: 4px;}
+    .icon-badge {font-size: 10px; text-shadow: none;}
+    .special-star {position: absolute; top: 2px; left: 3px; font-size: 10px; text-shadow: 0 0 3px rgba(255,215,0, 1); filter: drop-shadow(0 0 2px black);}
+
+    /* MODALE (Condivisa) */
+    .modal {position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center; z-index: 100;}
+    .modal-content {background:#222;padding:25px;border-radius:16px;width:90%;max-width:340px; text-align: center; border: 1px solid #444; max-height: 90vh; overflow-y: auto;}
+    
+    /* Lista Giorni Speciali */
+    #specialListContent { text-align: left; margin-bottom: 15px; max-height: 60vh; overflow-y: auto; }
+    .special-item {
+        background: #333;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        border: 1px solid #444;
+        transition: transform 0.2s;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .special-item:hover { transform: scale(1.02); background: #3a3a3a; border-color: #ffd700; }
+    .special-date { font-weight: bold; color: #ffd700; display: block; font-size: 14px; }
+    .special-desc { font-size: 12px; color: #bbb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+    
+    /* UI Modale Editor */
+    .place-row {display: flex; gap: 10px; margin-bottom: 10px;} 
+    .place-btn {flex: 1; opacity: 0.5; border: 2px solid transparent; font-size: 14px; padding: 12px; margin-bottom: 0;}
+    .place-btn.active {opacity: 1; border-color: #fff; transform: scale(1.02);}
+    
+    #btn-speciale {width: 100%; background: #333; border: 1px solid #555; color: #aaa; margin-bottom: 10px;}
+    #btn-speciale.active {background: #ffd700; color: #000; border-color: #fff; box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);}
+    #btn-decidere {width: 100%; background: #2a2a2a; border: 1px dashed #666; color: #aaa; opacity: 0.7; margin-bottom: 20px;}
+    #btn-decidere.active {opacity: 1; border: 1px solid #fff; background: #333; color: #fff;}
+
+    .stats {font-size:11px; margin-top:20px; padding-top:15px; border-top: 1px solid #333; display: flex; flex-wrap: wrap; justify-content: space-around; gap: 8px; color: #bbb;}
+    .label {font-size: 12px; display: block; text-align: left; margin-bottom: 4px; color: #aaa; margin-top: 15px;}
+    
+    .photo-preview {width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; border: 1px solid #444; display: none;}
+    .file-input-wrapper {position: relative; overflow: hidden; display: inline-block; width: 100%;}
+    .file-input-wrapper input[type=file] {font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0;}
+    .btn-upload {background: #333; color: white; border: 1px dashed #666;}
+
+    /* Navigazione / Galleria */
+    .topbar {display:flex;gap:8px;margin-bottom:16px;}
+    .topbar button {margin:0;padding:10px;font-size:14px;}
+    .topbar .active-tab {outline:2px solid #fff;}
+    .user-row {display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;font-size:12px;color:#aaa;}
+    .user-row button {width:auto;margin:0;padding:7px 10px;font-size:12px;}
+    .gallery-toolbar {display:flex;gap:8px;margin:10px 0 16px;}
+    .gallery-toolbar input {margin:0;}
+    .gallery-grid {display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+    .gallery-card {background:#2a2a2a;border:1px solid #444;border-radius:12px;overflow:hidden;cursor:pointer;}
+    .gallery-card img,.gallery-card video {width:100%;height:150px;object-fit:cover;display:block;background:#111;}
+    .gallery-meta {padding:10px;text-align:left;}
+    .gallery-date {font-weight:bold;color:#c878d6;font-size:13px;}
+    .gallery-note {font-size:12px;color:#bbb;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .day-photo-grid {display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:8px 0 12px;}
+    .day-photo-item {position:relative;background:#242424;border:1px solid #3d3d3d;border-radius:9px;overflow:hidden;}
+    .day-photo-meta {padding:6px 7px;font-size:10px;color:#aaa;line-height:1.35;}
+    .author-meta {font-size:11px;color:#aaa;margin:-3px 0 10px;text-align:left;}
+    .day-photo-item img,.day-photo-item video {width:100%;height:105px;object-fit:cover;border-radius:8px 8px 0 0;background:#111;display:block;}
+    .photo-delete {position:absolute;top:4px;right:4px;width:auto!important;padding:5px 7px!important;margin:0!important;background:rgba(0,0,0,.75)!important;color:#fff!important;border:1px solid #666!important;font-size:11px!important;}
+    .empty-state {padding:24px 10px;text-align:center;color:#777;border:1px dashed #555;border-radius:12px;}
+
+    /* Home */
+    .home-hero {text-align:center;padding:8px 4px 18px;}
+    .home-hero h2 {margin:6px 0 8px;font-size:28px;}
+    .home-hero p {margin:0;color:#aaa;font-size:14px;line-height:1.5;}
+    .home-cards {display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px;}
+    .home-card {position:relative;overflow:hidden;padding:22px 18px;border-radius:16px;border:1px solid #444;background:linear-gradient(145deg,#262626,#1b1b1b);cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s;text-align:left;}
+    .home-card:hover {transform:translateY(-2px);border-color:#777;box-shadow:0 10px 24px rgba(0,0,0,.35);}
+    .home-card .home-icon {font-size:30px;display:block;margin-bottom:10px;}
+    .home-card h3 {margin:0 0 5px;font-size:19px;}
+    .home-card p {margin:0;color:#aaa;font-size:12px;line-height:1.4;}
+    .home-card.calendar-card {border-left:4px solid #ef5350;}
+    .home-card.gallery-card {border-left:4px solid #8e24aa;}
+    .home-card.future-card {border-left:4px solid #777;opacity:.72;cursor:default;}
+    .home-card.future-card:hover {transform:none;border-color:#444;box-shadow:none;}
+    .page-header {display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+    .page-header button {width:auto;margin:0;padding:9px 11px;}
+    .page-header h2 {margin:0;flex:1;text-align:center;font-size:20px;padding-right:42px;}
+    .user-badge {font-weight:700;padding:6px 10px;border-radius:999px;border:1px solid currentColor;}
+    .user-badge.cucci {color:#ef5350;background:rgba(239,83,80,.10);}
+    .user-badge.cicci {color:#ab47bc;background:rgba(171,71,188,.10);}
+
+
+    /* ===== HOME 2: layout ispirato allo schizzo ===== */
+    .home-dashboard {display:flex;flex-direction:column;gap:14px;margin-top:6px;}
+    .diary-feature {min-height:190px;border-radius:20px;padding:24px;position:relative;overflow:hidden;cursor:pointer;
+        background:linear-gradient(145deg,rgba(87,21,101,.72),rgba(44,15,53,.92));border:1px solid rgba(202,116,220,.35);
+        box-shadow:0 14px 32px rgba(0,0,0,.28);display:flex;flex-direction:column;justify-content:flex-end;}
+    .diary-feature:before {content:'“';position:absolute;top:-28px;left:15px;font-family:Georgia,serif;font-size:150px;opacity:.08;}
+    .diary-feature .eyebrow {font-size:11px;text-transform:uppercase;letter-spacing:2.2px;color:#d9a7e4;margin-bottom:auto;font-weight:800;}
+    .diary-feature h2 {margin:0 0 7px;font-size:30px;}
+    .diary-feature p {margin:0;color:#d0bdD5;font-size:13px;line-height:1.55;max-width:360px;}
+    .dashboard-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+    .dashboard-tile {min-height:138px;border-radius:18px;padding:18px;border:1px solid #3d3d3d;background:linear-gradient(145deg,#282828,#1b1b1b);
+        cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;transition:transform .18s,border-color .18s;}
+    .dashboard-tile:hover {transform:translateY(-2px);border-color:#666;}
+    .dashboard-tile .tile-icon {font-size:29px;}
+    .dashboard-tile h3 {margin:18px 0 4px;font-size:17px;}
+    .dashboard-tile p {margin:0;color:#8f8f8f;font-size:11px;line-height:1.35;}
+    .dashboard-tile.calendar-tile {box-shadow:inset 0 -3px 0 rgba(239,83,80,.55);}
+    .dashboard-tile.gallery-tile {box-shadow:inset 0 -3px 0 rgba(171,71,188,.55);}
+    .dashboard-tile.books-tile {box-shadow:inset 0 -3px 0 rgba(255,193,7,.45);}
+    .dashboard-tile.tv-tile {box-shadow:inset 0 -3px 0 rgba(66,165,245,.45);}
+    .dashboard-tile.games-tile {box-shadow:inset 0 -3px 0 rgba(102,187,106,.55);}
+    .dashboard-tile.music-tile {box-shadow:inset 0 -3px 0 rgba(29,185,84,.55);}
+    .soon-chip {display:inline-flex;align-self:flex-start;margin-top:9px;padding:4px 8px;border-radius:999px;background:#313131;color:#a8a8a8;font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;}
+
+    /* ===== GALLERIA FULL SCREEN ===== */
+    body.gallery-mode {background:#090909 !important;padding:0 !important;align-items:flex-start !important;display:block !important;}
+    body.gallery-mode > .app {max-width:none !important;width:100% !important;min-height:100vh !important;border-radius:0 !important;padding:0 !important;
+        background:#090909 !important;border:0 !important;box-shadow:none !important;backdrop-filter:none !important;}
+    body.gallery-mode > .app > h1, body.gallery-mode .user-row {display:none !important;}
+    #gallerySection {min-height:100vh;background:#090909;color:#fff;}
+    .gallery-page-header {height:58px;position:sticky;top:0;z-index:35;background:rgba(9,9,9,.94);backdrop-filter:blur(14px);display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid #202020;}
+    .gallery-page-header button {width:auto;margin:0;padding:8px 11px;border-radius:10px;}
+    .gallery-page-header h2 {margin:0;flex:1;font-size:18px;text-align:center;}
+    .gallery-add-button {font-size:25px!important;line-height:1!important;padding:6px 12px!important;}
+    .gallery-upload-panel {display:none;padding:14px 14px 4px;background:#111;border-bottom:1px solid #242424;}
+    .gallery-upload-panel.open {display:block;}
+    .gallery-upload-panel .label {margin-top:0;}
+    .gallery-grid {display:grid!important;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important;gap:2px!important;margin:0!important;padding:2px!important;}
+    .gallery-card {position:relative!important;border:0!important;border-radius:0!important;background:#111!important;overflow:hidden!important;aspect-ratio:1/1!important;}
+    .gallery-card img,.gallery-card video {width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;background:#111!important;}
+    .gallery-card .gallery-meta {display:none!important;}
+    .gallery-author-dot {position:absolute;right:7px;bottom:7px;width:11px;height:11px;border-radius:50%;border:2px solid rgba(255,255,255,.9);box-shadow:0 1px 4px #000;}
+    .gallery-author-dot.cucci {background:#ef3f46;}
+    .gallery-author-dot.cicci {background:#9c3cc3;}
+    .gallery-video-badge {position:absolute;left:7px;top:7px;background:rgba(0,0,0,.58);border-radius:999px;padding:4px 7px;font-size:11px;}
+    @media(max-width:640px){.gallery-grid{grid-template-columns:repeat(3,1fr)!important;}.gallery-card{min-width:0!important;}.dashboard-tile{min-height:125px;padding:15px}.diary-feature{min-height:175px}}
+    @media(min-width:1100px){.gallery-grid{grid-template-columns:repeat(6,1fr)!important;}}
+
+    /* Visualizzatore foto */
+    .photo-viewer {position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.97);display:none;flex-direction:column;color:white;}
+    .photo-viewer.open {display:flex;}
+    .viewer-top {height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 13px;border-bottom:1px solid #202020;flex-shrink:0;}
+    .viewer-top button {width:auto;margin:0;padding:8px 11px;background:#191919;color:#fff;}
+    .viewer-stage {position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#000;overflow:hidden;}
+    .viewer-stage img,.viewer-stage video {max-width:100%;max-height:100%;object-fit:contain;}
+    .viewer-nav {position:absolute;top:50%;transform:translateY(-50%);width:44px!important;height:54px;padding:0!important;margin:0!important;border-radius:12px!important;background:rgba(20,20,20,.64)!important;color:#fff!important;font-size:24px!important;}
+    .viewer-nav.prev {left:10px}.viewer-nav.next {right:10px}
+    .viewer-info {flex-shrink:0;padding:14px 16px 18px;background:#101010;border-top:1px solid #222;}
+    .viewer-info-row {display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;color:#bdbdbd;line-height:1.5;}
+    .viewer-author {font-weight:800;}.viewer-author.cucci{color:#ef5350}.viewer-author.cicci{color:#ab47bc}
+    .viewer-note {margin:9px 0 0;color:#e3e3e3;font-size:13px;}
+    .viewer-day-btn {margin:12px 0 0!important;width:auto!important;padding:9px 12px!important;}
+
+
+    /* Diario condiviso */
+    .diary-page {max-width:920px;margin:0 auto;padding-bottom:36px;}
+    .diary-compose {margin:14px 0 22px;padding:18px;border:1px solid #3b3b3b;border-radius:18px;background:rgba(24,24,24,.94);box-shadow:0 10px 30px rgba(0,0,0,.2);}
+    .diary-compose-title {font-size:13px;color:#aaa;margin-bottom:9px;}
+    .diary-compose textarea {min-height:110px;resize:vertical;margin:0 0 10px;}
+    .diary-send-row {display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .diary-recipient {font-size:12px;color:#aaa;}
+    .diary-send-row button {width:auto;margin:0;padding:10px 18px;}
+    .diary-day-group {margin:22px 0;}
+    .diary-day-title {position:sticky;top:0;z-index:2;margin:0 0 10px;padding:7px 10px;border-radius:10px;background:rgba(12,12,12,.92);backdrop-filter:blur(8px);font-size:12px;color:#aaa;text-align:center;}
+    .diary-message {position:relative;margin:9px 0;padding:14px 15px 11px;border-radius:16px;background:#1e1e1e;border:1px solid #343434;overflow:hidden;}
+    .diary-message.cucci {border-left:4px solid #ef5350;}
+    .diary-message.cicci {border-left:4px solid #ab47bc;}
+    .diary-message-head {display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+    .diary-author {font-weight:800;font-size:13px;}
+    .diary-author.cucci {color:#ef5350}.diary-author.cicci {color:#ab47bc}
+    .diary-time {font-size:11px;color:#777;white-space:nowrap;}
+    .diary-body {white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55;color:#eee;font-size:14px;}
+    .diary-actions {display:flex;align-items:center;justify-content:flex-end;margin-top:10px;}
+    .heart-btn {width:auto!important;margin:0!important;padding:7px 10px!important;border-radius:999px!important;background:#272727!important;color:#bbb!important;border:1px solid #3d3d3d!important;font-size:12px!important;}
+    .heart-btn.active {background:#3a1519!important;color:#ff8a96!important;border-color:#7c2f39!important;}
+    .diary-empty {padding:38px 16px;text-align:center;color:#777;border:1px dashed #3a3a3a;border-radius:16px;}
+
+    /* Messaggio nuovo all'apertura */
+    .message-arrival {position:fixed;inset:0;z-index:400;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.78);backdrop-filter:blur(7px);}
+    .message-arrival.open {display:flex;}
+    .message-arrival-card {width:min(520px,100%);max-height:78vh;overflow:auto;padding:22px;border-radius:22px;background:#171717;border:1px solid #444;box-shadow:0 24px 70px rgba(0,0,0,.6);}
+    .arrival-kicker {font-size:12px;color:#999;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+    .message-arrival-card h3 {margin:0 0 14px;font-size:22px;}
+    .arrival-message {padding:13px 14px;margin:9px 0;border-radius:14px;background:#222;border-left:4px solid #777;}
+    .arrival-message.cucci {border-left-color:#ef5350}.arrival-message.cicci {border-left-color:#ab47bc}
+    .arrival-meta {font-size:11px;color:#888;margin-bottom:6px;}
+    .arrival-text {white-space:pre-wrap;line-height:1.5;}
+    .message-arrival-card button {margin-bottom:0;}
+
+
+/* TEMA DARK GOTICO */
+:root{--g-red:#c01934;--g-purple:#72178b;--g-purple2:#b53ac8;--g-line:#451849;--g-display:"Cinzel Decorative",Georgia,serif;--g-body:"Cormorant Garamond",Georgia,serif}body{font-family:var(--g-body)!important;color:#f5edf6!important;background:url("sfondo.jpeg") no-repeat center center fixed!important;background-size:cover!important}.app{background:rgba(8,4,9,.95)!important;border:1px solid var(--g-line)!important;border-radius:0!important;box-shadow:0 24px 80px #000!important}h1,h2,h3,.eyebrow,.label,button,.user-badge,.soon-chip,.diary-author,.viewer-author,.arrival-kicker,.diary-day-title{font-family:var(--g-display)!important;letter-spacing:.055em}input,textarea,select{background:#09060a!important;color:#fff!important;border:1px solid #4c1c51!important;border-radius:0!important}button{border-radius:0!important;text-transform:uppercase!important}button.primary{background:linear-gradient(135deg,#85172b,#5b0d6a)!important;color:#fff!important;border:1px solid #9b2640!important}button.secondary,button.ghost{background:#0d080e!important;color:#ddd0df!important;border:1px solid #502054!important}.diary-feature{border-radius:0!important;border:1px solid #6f1e39!important;background:linear-gradient(120deg,rgba(126,17,37,.58),rgba(53,8,65,.62)),#0b060c!important;box-shadow:inset 5px 0 0 var(--g-red)!important}.dashboard-tile{border-radius:0!important;background:linear-gradient(145deg,#130a15,#080509)!important;border:1px solid #3f1643!important;box-shadow:none!important}.dashboard-tile:nth-child(odd){box-shadow:inset 0 -3px 0 var(--g-red)!important}.dashboard-tile:nth-child(even){box-shadow:inset 0 -3px 0 var(--g-purple)!important}.tile-icon{display:none!important}.soon-chip{border-radius:0!important;background:#160b18!important;border:1px solid #502054!important;color:#b77bc0!important}.calendar-header,.calendar,.day-detail,.diary-compose,.diary-message,.message-arrival-card{background:#0b070c!important;border-color:#401744!important;border-radius:0!important}.diary-message.cucci{border-left:4px solid var(--g-red)!important}.diary-message.cicci{border-left:4px solid var(--g-purple)!important}.heart-btn{border-radius:0!important;background:#100912!important;color:#bca9bf!important;border:1px solid #4c1c51!important}.heart-btn.active{background:#2b0912!important;color:#ff8c9b!important;border-color:#8d2036!important}body.gallery-mode,#gallerySection{background:#020102!important}.gallery-page-header{background:rgba(4,2,5,.96)!important;border-bottom:1px solid #421846!important}.gallery-author-dot{display:none!important}.gallery-video-badge{border-radius:0!important;background:rgba(8,4,9,.86)!important;border:1px solid #5c205f!important}.photo-viewer{background:rgba(0,0,0,.985)!important}.viewer-info{background:#09060a!important;border-top:1px solid #421846!important}.viewer-nav{border-radius:0!important;background:#0d080f!important;border:1px solid #502054!important}.arrival-message{border-radius:0!important;background:#0d080f!important}.arrival-message.cucci{border-left-color:var(--g-red)!important}.arrival-message.cicci{border-left-color:var(--g-purple)!important}
+</style>
+</head>
+<body>
+
+<div class="app">
+    <h1>AIYDIWDWY</h1>
+
+    <div id="login">
+        <input id="username" type="text" placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false">
+        <input id="password" type="password" placeholder="Password">
+        <button class="primary" onclick="login()">Accedi</button>
+        <div style="font-size:12px;color:#888;text-align:center;">Solo i 2 account autorizzati possono entrare.</div>
+    </div>
+
+    <div id="main" style="display:none;">
+        <div class="user-row"><span id="signedUser" class="user-badge"></span><button class="ghost" onclick="logout()">Esci</button></div>
+
+        <div id="homeSection">
+            <div class="home-dashboard">
+                <div class="diary-feature" onclick="showSection('diary')">
+                    <div class="eyebrow">Il nostro spazio</div>
+                    <h2>DIARIO</h2>
+                    <p>Lasciatevi messaggi, ritrovateli per giorno e reagite con un cuore.</p>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="dashboard-tile calendar-tile" onclick="showSection('calendar')">
+                        <span class="tile-icon"></span><div><h3>Calendario</h3><p>Giorni, note e ricordi.</p></div>
+                    </div>
+                    <div class="dashboard-tile gallery-tile" onclick="showSection('gallery')">
+                        <span class="tile-icon">️</span><div><h3>Galleria</h3><p>Tutte le foto a schermo pieno.</p></div>
+                    </div>
+                    <div class="dashboard-tile books-tile" onclick="location.href='libri.html'">
+                        <span class="tile-icon"></span><div><h3>Libri</h3><p>Libreria, progressi e confronti.</p></div>
+                    </div>
+                    <div class="dashboard-tile tv-tile" onclick="location.href='ciccina-tv.html'">
+                        <span class="tile-icon"></span><div><h3>Ciccina TV</h3><p>Film, serie e progressi.</p></div>
+                    </div>
+                    <div class="dashboard-tile games-tile" onclick="location.href='videogiochi.html'">
+                        <span class="tile-icon"></span><div><h3>Videogiochi</h3><p>Catalogo IGDB, progressi e confronti.</p></div>
+                    </div>
+                    <div class="dashboard-tile music-tile" onclick="location.href='musica.html'">
+                        <span class="tile-icon"></span><div><h3>Musica</h3><p>Brani, album, artisti e preferiti.</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="diarySection" style="display:none;">
+            <div class="diary-page">
+                <div class="page-header"><button class="ghost" onclick="showSection('home')">← Home</button><h2>DIARIO</h2></div>
+                <div class="diary-compose">
+                    <div id="diaryComposeTitle" class="diary-compose-title">Lascia un messaggio</div>
+                    <textarea id="diaryMessageText" maxlength="4000" placeholder="Scrivi qualcosa da lasciare all'altro..."></textarea>
+                    <div class="diary-send-row">
+                        <span id="diaryRecipient" class="diary-recipient"></span>
+                        <button id="diarySendBtn" class="primary" onclick="sendDiaryMessage()">Invia </button>
+                    </div>
+                </div>
+                <div id="diaryMessages"></div>
+            </div>
+        </div>
+
+        <div id="calendarSection" style="display:none;">
+        <div class="page-header"><button class="ghost" onclick="showSection('home')">← Home</button><h2>CALENDARIO</h2></div>
+        <div class="calendar-header">
+            <button class="ghost" style="width:auto; margin:0;" onclick="changeMonth(-1)">◀</button>
+            <strong id="month" style="font-size: 18px;"></strong>
+            <button class="ghost" style="width:auto; margin:0;" onclick="changeMonth(1)">▶</button>
+        </div>
+
+        <div class="calendar" id="calendar"></div>
+
+        <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+            <button class="gold" onclick="openSpecialList()"> MENU GIORNI SPECIALI</button>
+
+            <button class="primary" onclick="shiftScheduleFromToday()"> Oggi è saltato: Slitta tutto!</button>
+            <button class="secondary" onclick="forceBalanceMonth()">️ Riscrivi Mese (Alternanza)</button>
+            <button class="tertiary" onclick="setAllToDecide()"> Imposta Mese "Da Decidere"</button>
+            <button class="ghost" style="color: #ef5350; border-color: #ef5350; margin-top: 10px;" onclick="resetMonthColors()"> Reset Colori Mese (Mantieni Foto/Note)</button>
+        </div>
+        
+        <div class="stats" id="stats"></div>
+        </div>
+
+        <div id="gallerySection" style="display:none;">
+            <div class="gallery-page-header">
+                <button class="ghost" onclick="showSection('home')">← Home</button>
+                <h2>Galleria</h2>
+                <button class="ghost gallery-add-button" onclick="toggleGalleryUpload()" title="Aggiungi foto">＋</button>
+            </div>
+            <div id="galleryUploadPanel" class="gallery-upload-panel">
+                <label class="label">Aggiungi una foto/video a un giorno</label>
+                <input id="galleryDate" type="date">
+                <textarea id="galleryNote" placeholder="Descrizione (opzionale)"></textarea>
+                <div class="file-input-wrapper">
+                    <button class="btn-upload"> Scegli Foto/Video</button>
+                    <input type="file" id="galleryPhotoInput" accept="image/*,video/*">
+                </div>
+                <button id="galleryUploadBtn" class="primary" onclick="uploadFromGallery()">Aggiungi alla galleria</button>
+            </div>
+            <div id="galleryGrid" class="gallery-grid"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="specialListModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0;"> Ricordi Speciali</h3>
+        <div id="specialListContent">
+            </div>
+        <button class="ghost" onclick="closeSpecialList()">Chiudi</button>
+    </div>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <h3 id="modalDate" style="margin-top: 0;"></h3>
+        
+        <label class="label" style="margin-top: 0;">Dove dormiamo?</label>
+        
+        <div class="place-row">
+            <button id="btn-cicci" class="place-btn" style="background:#4a148c; color:white;" onclick="setPlace('casa-cicci')"> Cicci</button>
+            <button id="btn-cucci" class="place-btn" style="background:#880e4f; color:white;" onclick="setPlace('casa-cucci')">CUORE  Cucci</button>
+        </div>
+
+        <div class="place-row">
+            <button id="btn-separati" class="place-btn" style="background:#000; color:#888; border-color:#333;" onclick="setPlace('separati')"> Separati</button>
+            <button id="btn-fuori" class="place-btn" style="background:#ef6c00; color:white;" onclick="setPlace('fuori')"> Fuori</button>
+        </div>
+
+        <button id="btn-speciale" onclick="toggleSpecial()"> Speciale (⭐)</button>
+        <button id="btn-decidere" onclick="setPlace('da-decidere')"> Da Decidere</button>
+
+        <label class="label">Orari (Opzionale)</label>
+        <div style="display:flex; gap:10px;">
+            <input type="time" id="startTime">
+            <input type="time" id="endTime">
+        </div>
+
+        <label class="label">Descrizione del giorno</label>
+        <textarea id="noteText" placeholder="Es: Cena fuori, Compleanno, etc..."></textarea>
+        <div id="noteAuthorMeta" class="author-meta" style="display:none;"></div>
+
+        <label class="label">Foto/Video del giorno</label>
+        <div id="dayPhotoGrid" class="day-photo-grid"></div>
+        <img id="imgPreview" class="photo-preview" src="">
+        <video id="videoPreview" class="photo-preview" controls style="display:none;"></video>
+        <div class="file-input-wrapper">
+            <button class="btn-upload"> Aggiungi Foto/Video</button>
+            <input type="file" id="photoInput" accept="image/*,video/*" onchange="previewFile()">
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top: 20px;">
+            <button id="saveBtn" class="primary" onclick="saveDay()">Salva</button>
+            <button class="ghost" onclick="closeModal()">Chiudi</button>
+        </div>
+        <button class="ghost" style="margin-bottom:0; font-size:12px; color:#d32f2f;" onclick="markAsMissedSingle()">Segna come saltato solo oggi</button>
+    </div>
+</div>
+
+
+
+<div id="messageArrival" class="message-arrival" aria-hidden="true">
+    <div class="message-arrival-card">
+        <div class="arrival-kicker">Hai ricevuto un messaggio</div>
+        <h3 id="arrivalTitle"> Un messaggio per te</h3>
+        <div id="arrivalMessages"></div>
+        <button class="primary" onclick="acknowledgeDiaryMessages()">Ho letto CUORE </button>
+        <button class="ghost" onclick="openDiaryFromArrival()">Apri il Diario</button>
+    </div>
+</div>
+
+<div id="photoViewer" class="photo-viewer" aria-hidden="true">
+    <div class="viewer-top">
+        <button onclick="closePhotoViewer()"> Chiudi</button>
+        <strong id="viewerCounter"></strong>
+        <span style="width:80px"></span>
+    </div>
+    <div id="viewerStage" class="viewer-stage">
+        <button class="viewer-nav prev" onclick="event.stopPropagation();stepPhoto(-1)">‹</button>
+        <div id="viewerMedia"></div>
+        <button class="viewer-nav next" onclick="event.stopPropagation();stepPhoto(1)">›</button>
+    </div>
+    <div class="viewer-info">
+        <div class="viewer-info-row">
+            <span id="viewerAuthor"></span>
+            <span id="viewerUploadedAt"></span>
+            <span id="viewerDay"></span>
+        </div>
+        <div id="viewerNote" class="viewer-note"></div>
+        <button class="ghost viewer-day-btn" onclick="goToViewerDay()"> Vai al giorno nel calendario</button>
+    </div>
+</div>
+
+<script>
+    // Il login mostra solo gli username. Firebase Authentication usa internamente
+    // due email tecniche, che non vengono mostrate nell'interfaccia.
+    const ACCOUNTS = {
+        cucci: { email: "cucci@cuddles.app", label: "Cucci" },
+        cicci: { email: "cicci@cuddles.app", label: "Cicci" }
+    };
+    const ALLOWED_EMAILS = Object.values(ACCOUNTS).map(account => account.email.toLowerCase());
+
+    function usernameFromEmail(email){
+        const normalized=(email || '').toLowerCase();
+        return Object.keys(ACCOUNTS).find(username => ACCOUNTS[username].email.toLowerCase() === normalized) || null;
+    }
+
+    function currentUsername(){
+        return auth.currentUser ? usernameFromEmail(auth.currentUser.email) : null;
+    }
+
+    function displayUsername(value){
+        if(!value) return 'Sconosciuto';
+        if(String(value).toLowerCase()==='legacy') return 'Vecchio calendario';
+        const direct=String(value).toLowerCase();
+        if(ACCOUNTS[direct]) return ACCOUNTS[direct].label;
+        const fromEmail=usernameFromEmail(value);
+        return fromEmail ? ACCOUNTS[fromEmail].label : value;
+    }
+
+
+    function normalizeDateKey(value){
+        if(!value) return '';
+        const parts=String(value).split('-').map(Number);
+        if(parts.length!==3 || parts.some(Number.isNaN)) return String(value);
+        return `${parts[0]}-${parts[1]}-${parts[2]}`;
+    }
+
+    function paddedDateKey(value){
+        if(!value) return '';
+        const parts=String(value).split('-').map(Number);
+        if(parts.length!==3 || parts.some(Number.isNaN)) return String(value);
+        return `${parts[0]}-${String(parts[1]).padStart(2,'0')}-${String(parts[2]).padStart(2,'0')}`;
+    }
+
+    function legacyTimestampFromUrl(url){
+        const match=String(url||'').match(/-(\d{13})(?:\.[a-z0-9]+)?(?:\?|$)/i);
+        if(!match) return null;
+        const millis=Number(match[1]);
+        if(!Number.isFinite(millis)) return null;
+        const d=new Date(millis);
+        if(Number.isNaN(d.getTime())) return null;
+        return firebase.firestore.Timestamp.fromMillis(millis);
+    }
+
+    const BUNDLED_LEGACY_PHOTOS = [
+        {date:'2026-1-6', url:'photos/2026-1-6-1767735302635.jpg', fileName:'2026-1-6-1767735302635.jpg'},
+        {date:'2026-4-25', url:'photos/2026-4-25-1777146549627.jpg', fileName:'2026-4-25-1777146549627.jpg'}
+    ];
+
+    async function migrateLegacyCalendarPhotos(){
+        try{
+            const calendarSnap=await db.collection('calendar').get();
+            const candidates=new Map();
+
+            // Copie presenti nel vecchio progetto: funzionano anche se un vecchio link GitHub non fosse più disponibile.
+            BUNDLED_LEGACY_PHOTOS.forEach(item=>{
+                candidates.set(normalizeDateKey(item.date), {...item, source:'bundle'});
+            });
+
+            // Recupera tutte le foto che il vecchio calendario conservava nel campo photoUrl.
+            calendarSnap.docs.forEach(doc=>{
+                const data=doc.data()||{};
+                if(!data.photoUrl) return;
+                const date=normalizeDateKey(doc.id);
+                if(!candidates.has(date)){
+                    const clean=String(data.photoUrl).split('?')[0];
+                    const fileName=clean.split('/').pop() || `legacy-${date}`;
+                    candidates.set(date,{date,url:data.photoUrl,fileName,source:'calendar'});
+                }
+            });
+
+            if(!candidates.size) return;
+            const batch=db.batch();
+            let changed=false;
+            for(const [date,item] of candidates){
+                const id='legacy_'+date.replace(/[^0-9-]/g,'_');
+                const ref=db.collection('photos').doc(id);
+                const existing=await ref.get();
+                if(existing.exists) continue;
+                const createdAt=legacyTimestampFromUrl(item.url || item.fileName);
+                batch.set(ref,{
+                    date,
+                    url:item.url,
+                    storagePath:null,
+                    fileName:item.fileName || '',
+                    mimeType:/\.(mp4|mov|webm)(?:\?|$)/i.test(item.url||'') ? 'video/legacy' : 'image/legacy',
+                    note:'',
+                    uploadedBy:'legacy',
+                    createdAt:createdAt || null,
+                    legacy:true,
+                    legacySource:item.source
+                });
+                batch.set(db.collection('calendar').doc(date),{photoCount:firebase.firestore.FieldValue.increment(1)},{merge:true});
+                changed=true;
+            }
+            if(changed) await batch.commit();
+        }catch(e){
+            console.warn('Migrazione foto vecchio calendario non completata:', e);
+        }
+    }
+
+    async function migrateLegacyFilesToCloudinary(){
+        try{
+            const snap=await db.collection('photos').get();
+            for(const doc of snap.docs){
+                const data=doc.data()||{};
+                if(data.cloudinaryPublicId || !data.url) continue;
+                // Migra soprattutto i file locali del vecchio progetto. Per URL remoti la migrazione
+                // viene tentata solo quando il server consente il download dal browser (CORS).
+                try{
+                    const response=await fetch(data.url);
+                    if(!response.ok) continue;
+                    const blob=await response.blob();
+                    if(!blob.type.startsWith('image/') && !blob.type.startsWith('video/')) continue;
+                    const name=data.fileName || `legacy-${doc.id}.${blob.type.split('/')[1]||'bin'}`;
+                    const file=new File([blob],name,{type:blob.type});
+                    const cloud=await uploadFileToCloudinary(file,data.date||'legacy');
+                    await doc.ref.set({
+                        url:cloud.secure_url,
+                        cloudinaryPublicId:cloud.public_id,
+                        cloudinaryResourceType:cloud.resource_type || (blob.type.startsWith('video/')?'video':'image'),
+                        width:cloud.width||null,
+                        height:cloud.height||null,
+                        bytes:cloud.bytes||blob.size||null,
+                        format:cloud.format||null,
+                        migratedToCloudinaryAt:firebase.firestore.FieldValue.serverTimestamp()
+                    },{merge:true});
+                }catch(e){
+                    console.warn('Foto precedente non migrata automaticamente:',doc.id,e);
+                }
+            }
+        }catch(e){
+            console.warn('Migrazione Cloudinary non completata:',e);
+        }
+    }
+
+    const firebaseConfig = {
+        apiKey:"AIzaSyCEtnsKsL6EkGmZsgx4lHEHv-CiZ5L3H98",
+        authDomain:"aiydiwdwy-aiygiwgwy.firebaseapp.com",
+        projectId:"aiydiwdwy-aiygiwgwy",
+        storageBucket:"aiydiwdwy-aiygiwgwy.firebasestorage.app",
+        messagingSenderId:"510624883472",
+        appId:"1:510624883472:web:d85e00839e26c8e41c3b95"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth=firebase.auth();
+    const db=firebase.firestore();
+
+    let current=new Date();
+    let selectedDate=null;
+    let tempPlace=null;
+    let tempSpecial=false; 
+    let fileToUpload=null;
+    let latestData = {}; 
+
+    auth.onAuthStateChanged(async user=>{
+        if(user){
+            const email=(user.email || '').toLowerCase();
+            const allowed=ALLOWED_EMAILS.map(x=>x.toLowerCase()).includes(email);
+            if(!allowed){
+                await auth.signOut();
+                alert("Questo account non è autorizzato.");
+                return;
+            }
+            document.getElementById('login').style.display='none';
+            document.getElementById('main').style.display='block';
+            const username=usernameFromEmail(user.email);
+            const signedUser=document.getElementById('signedUser');
+            signedUser.textContent = username ? `Ciao ${ACCOUNTS[username].label} ${username === 'cucci' ? 'CUORE ' : ''}` : 'Account autorizzato';
+            signedUser.classList.remove('cucci','cicci');
+            if(username) signedUser.classList.add(username);
+            showSection('home');
+            initializeMonth();
+            await migrateLegacyCalendarPhotos();
+            await migrateLegacyFilesToCloudinary();
+            initializeGallery();
+            initializeDiary();
+        } else {
+            document.getElementById('login').style.display='block';
+            document.getElementById('main').style.display='none';
+        }
+    });
+
+    function login(){
+        const username=document.getElementById('username').value.trim().toLowerCase();
+        const passwordVal=document.getElementById('password').value;
+        if(!username || !passwordVal){ alert("Inserisci username e password."); return; }
+        const account=ACCOUNTS[username];
+        if(!account){ alert("Username non autorizzato."); return; }
+        auth.signInWithEmailAndPassword(account.email,passwordVal).catch(()=>alert("Username o password non corretti."));
+    }
+
+    document.getElementById('password').addEventListener('keydown', e=>{
+        if(e.key === 'Enter') login();
+    });
+    document.getElementById('username').addEventListener('keydown', e=>{
+        if(e.key === 'Enter') document.getElementById('password').focus();
+    });
+
+    function logout(){ auth.signOut(); }
+
+    function showSection(section){
+        document.getElementById('homeSection').style.display = section === 'home' ? 'block' : 'none';
+        document.getElementById('diarySection').style.display = section === 'diary' ? 'block' : 'none';
+        document.getElementById('calendarSection').style.display = section === 'calendar' ? 'block' : 'none';
+        document.getElementById('gallerySection').style.display = section === 'gallery' ? 'block' : 'none';
+        document.body.classList.toggle('gallery-mode', section === 'gallery');
+        if(section !== 'gallery') document.getElementById('galleryUploadPanel')?.classList.remove('open');
+        if(section === 'diary') markDiaryAsRead();
+        window.scrollTo({top:0, behavior:'smooth'});
+    }
+
+    function toggleGalleryUpload(){
+        document.getElementById('galleryUploadPanel').classList.toggle('open');
+    }
+
+    let diaryUnsubscribe=null;
+    let diaryItems=[];
+    let pendingUnreadDiary=[];
+    let diaryPopupInitialized=false;
+
+    function currentUsername(){
+        return usernameFromEmail(auth.currentUser?.email || '');
+    }
+
+    function otherUsername(username=currentUsername()){
+        return username === 'cucci' ? 'cicci' : 'cucci';
+    }
+
+    function initializeDiary(){
+        if(diaryUnsubscribe) diaryUnsubscribe();
+        const me=currentUsername();
+        if(!me) return;
+        document.getElementById('diaryRecipient').textContent=`Il messaggio sarà lasciato a ${displayUsername(otherUsername(me))}.`;
+        diaryUnsubscribe=db.collection('diaryMessages').onSnapshot(snap=>{
+            diaryItems=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{
+                const ta=a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                const tb=b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                return tb-ta;
+            });
+            renderDiary();
+            const unread=diaryItems.filter(m=>m.recipient===me && m.author!==me && !(m.readBy||[]).includes(me));
+            if(unread.length){
+                pendingUnreadDiary=unread;
+                renderArrivalMessages(unread);
+                document.getElementById('messageArrival').classList.add('open');
+                document.getElementById('messageArrival').setAttribute('aria-hidden','false');
+            } else if(diaryPopupInitialized) {
+                document.getElementById('messageArrival').classList.remove('open');
+                document.getElementById('messageArrival').setAttribute('aria-hidden','true');
+            }
+            diaryPopupInitialized=true;
+        }, err=>console.warn('Diario non disponibile:',err));
+    }
+
+    async function sendDiaryMessage(){
+        const me=currentUsername();
+        const text=document.getElementById('diaryMessageText').value.trim();
+        if(!me || !text) return;
+        const btn=document.getElementById('diarySendBtn');
+        btn.disabled=true; btn.textContent='Invio...';
+        try{
+            await db.collection('diaryMessages').add({
+                text,
+                author:me,
+                recipient:otherUsername(me),
+                createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+                readBy:[me],
+                heartedBy:[]
+            });
+            document.getElementById('diaryMessageText').value='';
+        }catch(e){ alert('Non sono riuscito a inviare il messaggio: '+e.message); }
+        finally{ btn.disabled=false; btn.textContent='Invia '; }
+    }
+
+    function renderDiary(){
+        const box=document.getElementById('diaryMessages');
+        if(!box) return;
+        box.innerHTML='';
+        if(!diaryItems.length){ box.innerHTML='<div class="diary-empty">Ancora nessun messaggio nel Diario. </div>'; return; }
+        const groups=new Map();
+        diaryItems.forEach(msg=>{
+            const dt=msg.createdAt?.toDate ? msg.createdAt.toDate() : null;
+            const key=dt ? `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}` : 'senza-data';
+            if(!groups.has(key)) groups.set(key,[]);
+            groups.get(key).push(msg);
+        });
+        groups.forEach((messages,key)=>{
+            const group=document.createElement('section'); group.className='diary-day-group';
+            let label='Data non disponibile';
+            if(key!=='senza-data') label=new Date(key+'T12:00:00').toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+            group.innerHTML=`<div class="diary-day-title">${escapeHtml(label)}</div>`;
+            messages.forEach(msg=>group.appendChild(buildDiaryMessage(msg)));
+            box.appendChild(group);
+        });
+    }
+
+    function buildDiaryMessage(msg){
+        const me=currentUsername();
+        const author=(msg.author||'').toLowerCase();
+        const hearts=Array.isArray(msg.heartedBy)?msg.heartedBy:[];
+        const active=hearts.includes(me);
+        const dt=msg.createdAt?.toDate ? msg.createdAt.toDate() : null;
+        const time=dt ? dt.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '';
+        const card=document.createElement('article');
+        card.className='diary-message '+(author==='cucci'?'cucci':author==='cicci'?'cicci':'');
+        card.innerHTML=`<div class="diary-message-head"><span class="diary-author ${author}">${escapeHtml(displayUsername(author))}${author===me?' · tu':''}</span><span class="diary-time">${escapeHtml(time)}</span></div><div class="diary-body">${escapeHtml(msg.text||'')}</div><div class="diary-actions"><button class="heart-btn ${active?'active':''}" onclick="toggleDiaryHeart('${msg.id}')">${active?'CUORE ':'CUORE '} ${hearts.length||''}</button></div>`;
+        return card;
+    }
+
+    async function toggleDiaryHeart(messageId){
+        const me=currentUsername(); if(!me) return;
+        const msg=diaryItems.find(x=>x.id===messageId); if(!msg) return;
+        const hearts=Array.isArray(msg.heartedBy)?msg.heartedBy:[];
+        const value=hearts.includes(me) ? firebase.firestore.FieldValue.arrayRemove(me) : firebase.firestore.FieldValue.arrayUnion(me);
+        try{ await db.collection('diaryMessages').doc(messageId).update({heartedBy:value}); }
+        catch(e){ alert('Non sono riuscito ad aggiornare il cuore.'); }
+    }
+
+    function renderArrivalMessages(messages){
+        const me=currentUsername();
+        const box=document.getElementById('arrivalMessages'); box.innerHTML='';
+        document.getElementById('arrivalTitle').textContent=` ${displayUsername(otherUsername(me))} ti ha lasciato ${messages.length===1?'un messaggio':messages.length+' messaggi'}`;
+        [...messages].reverse().forEach(msg=>{
+            const el=document.createElement('div');
+            const author=(msg.author||'').toLowerCase();
+            const dt=msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+            el.className='arrival-message '+author;
+            el.innerHTML=`<div class="arrival-meta">${escapeHtml(displayUsername(author))}${dt?' · '+escapeHtml(dt):''}</div><div class="arrival-text">${escapeHtml(msg.text||'')}</div>`;
+            box.appendChild(el);
+        });
+    }
+
+    async function markDiaryAsRead(){
+        const me=currentUsername(); if(!me || !diaryItems.length) return;
+        const unread=diaryItems.filter(m=>m.recipient===me && !(m.readBy||[]).includes(me));
+        if(!unread.length) return;
+        const batch=db.batch();
+        unread.forEach(m=>batch.update(db.collection('diaryMessages').doc(m.id),{readBy:firebase.firestore.FieldValue.arrayUnion(me)}));
+        try{ await batch.commit(); }catch(e){ console.warn('Lettura Diario non aggiornata:',e); }
+    }
+
+    async function acknowledgeDiaryMessages(){
+        await markDiaryAsRead();
+        pendingUnreadDiary=[];
+        document.getElementById('messageArrival').classList.remove('open');
+        document.getElementById('messageArrival').setAttribute('aria-hidden','true');
+    }
+
+    async function openDiaryFromArrival(){
+        await acknowledgeDiaryMessages();
+        showSection('diary');
+    }
+
+    function openPlaceholder(name){ alert(name+' non è ancora configurato.'); }
+
+    function render(dataFromFirebase=null){
+        if(dataFromFirebase) latestData = dataFromFirebase;
+        const cal=document.getElementById('calendar'); cal.innerHTML='';
+        const y=current.getFullYear(), m=current.getMonth();
+        const todayDate = new Date(); 
+
+        document.getElementById('month').textContent = current.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+
+        ['L','M','M','G','V','S','D'].forEach(d=>{let e=document.createElement('div'); e.textContent=d; e.className='day-name'; cal.appendChild(e);});
+        const first=new Date(y,m,1).getDay()||7; for(let i=1;i<first;i++) cal.appendChild(document.createElement('div'));
+        const days=new Date(y,m+1,0).getDate();
+        
+        for(let d=1;d<=days;d++){
+            const key=`${y}-${m+1}-${d}`;
+            const el=document.createElement('div'); el.className='day'; el.innerHTML = `<strong>${d}</strong>`; el.onclick=()=>openModal(key);
+            
+            if(y === todayDate.getFullYear() && m === todayDate.getMonth() && d === todayDate.getDate()) {
+                el.classList.add('today');
+            }
+
+            if(latestData && latestData[key]){
+                const data=latestData[key];
+                
+                if(data.missed) {
+                    el.classList.add('missed');
+                } else {
+                    if(data.isSpecial) {
+                        if(data.place && data.place !== 'da-decidere') {
+                            el.classList.add(data.place);
+                        } else {
+                            el.classList.add('speciale-blue');
+                        }
+                        el.innerHTML += '<span class="special-star">⭐</span>';
+                    } else {
+                        if(data.place) el.classList.add(data.place);
+                    }
+                }
+
+                if(!data.missed && data.start && data.end) el.innerHTML+=`<div class='time'>${data.start}-${data.end}</div>`;
+                
+                let iconsHtml = '<div class="icons-container">';
+                if(data.note && data.note.trim() !== "") iconsHtml += '<span class="icon-badge"></span>';
+                if(data.photoUrl || (data.photoCount && data.photoCount > 0)) iconsHtml += '<span class="icon-badge"></span>';
+                iconsHtml += '</div>';
+                el.innerHTML += iconsHtml;
+            }
+            cal.appendChild(el);
+        }
+        updateStats();
+    }
+
+    let lastRecordedDay = new Date().getDate();
+    setInterval(() => {
+        const now = new Date();
+        if(now.getDate() !== lastRecordedDay) {
+            lastRecordedDay = now.getDate();
+            render(latestData);
+        }
+    }, 60000); 
+
+    // ---------------- LISTA SPECIALI ----------------
+    function openSpecialList(){
+        const listDiv = document.getElementById('specialListContent');
+        listDiv.innerHTML = '';
+        
+        // Filtra e ordina (dal più recente)
+        const specialDays = Object.keys(latestData)
+            .filter(key => latestData[key].isSpecial)
+            .sort((a,b) => new Date(b) - new Date(a));
+
+        if(specialDays.length === 0){
+            listDiv.innerHTML = '<div style="padding:10px; color:#777;">Nessun giorno speciale trovato.</div>';
+        } else {
+            specialDays.forEach(key => {
+                const data = latestData[key];
+                const dateObj = new Date(key);
+                const niceDate = dateObj.toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'long', year:'numeric'});
+                
+                const item = document.createElement('div');
+                item.className = 'special-item';
+                
+                let icons = "";
+                if(data.photoUrl || (data.photoCount && data.photoCount > 0)) icons += " ";
+                if(data.note) icons += "";
+
+                item.innerHTML = `
+                    <div>
+                        <span class="special-date">⭐ ${niceDate}</span>
+                        <span class="special-desc">${data.note || "Nessuna descrizione"}${data.note ? ` ·  ${displayUsername(data.noteUpdatedBy || data.updatedBy)}` : ''}</span>
+                    </div>
+                    <div style="font-size:16px;">${icons}</div>
+                `;
+                item.onclick = () => {
+                    closeSpecialList();
+                    openModal(key);
+                };
+                listDiv.appendChild(item);
+            });
+        }
+        
+        document.getElementById('specialListModal').style.display = 'flex';
+    }
+
+    function closeSpecialList(){
+        document.getElementById('specialListModal').style.display = 'none';
+    }
+
+    // ---------------- MODAL ----------------
+    function openModal(date){ 
+        selectedDate=date; tempPlace=null; tempSpecial=false; fileToUpload=null;
+        const parts = date.split('-');
+        const dateObj = new Date(parts[0], parts[1]-1, parts[2]);
+        document.getElementById('modalDate').textContent = dateObj.toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'long'});
+        
+        document.getElementById('startTime').value = '';
+        document.getElementById('endTime').value = '';
+        document.getElementById('noteText').value = '';
+        document.getElementById('noteAuthorMeta').style.display = 'none';
+        document.getElementById('noteAuthorMeta').textContent = '';
+        document.getElementById('photoInput').value = '';
+        document.getElementById('imgPreview').style.display = 'none';
+        document.getElementById('videoPreview').style.display = 'none';
+        document.getElementById('videoPreview').src = '';
+        document.getElementById('imgPreview').src = '';
+        document.getElementById('saveBtn').textContent = "Salva";
+        document.getElementById('saveBtn').disabled = false;
+
+        updatePlaceUI(); updateSpecialUI();
+        
+        db.collection('calendar').doc(date).get().then(doc => {
+            if(doc.exists){
+                const data = doc.data();
+                if(data.place) setPlace(data.place);
+                if(data.isSpecial) { tempSpecial = true; updateSpecialUI(); }
+                if(data.start) document.getElementById('startTime').value = data.start;
+                if(data.end) document.getElementById('endTime').value = data.end;
+                if(data.note) {
+                    document.getElementById('noteText').value = data.note;
+                    const noteAuthor = displayUsername(data.noteUpdatedBy || data.updatedBy);
+                    const noteWhen = data.noteUpdatedAt?.toDate ? data.noteUpdatedAt.toDate().toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+                    const meta = document.getElementById('noteAuthorMeta');
+                    meta.textContent = ` Scritto da ${noteAuthor}${noteWhen ? ` · ${noteWhen}` : ''}`;
+                    meta.style.display = 'block';
+                }
+
+            }
+        });
+        loadDayPhotos(date);
+        document.getElementById('modal').style.display='flex'; 
+    }
+
+    function closeModal(){ document.getElementById('modal').style.display='none'; }
+    function setPlace(p){ tempPlace=p; updatePlaceUI(); }
+    function toggleSpecial(){ tempSpecial = !tempSpecial; updateSpecialUI(); }
+
+    function updateSpecialUI(){
+        const btn = document.getElementById('btn-speciale');
+        if(tempSpecial) btn.classList.add('active'); else btn.classList.remove('active');
+    }
+
+    function updatePlaceUI(){
+        ['btn-cicci','btn-cucci','btn-separati','btn-fuori','btn-decidere'].forEach(id=>document.getElementById(id).classList.remove('active'));
+        if(tempPlace === 'casa-cicci') document.getElementById('btn-cicci').classList.add('active');
+        if(tempPlace === 'casa-cucci') document.getElementById('btn-cucci').classList.add('active');
+        if(tempPlace === 'separati') document.getElementById('btn-separati').classList.add('active');
+        if(tempPlace === 'fuori') document.getElementById('btn-fuori').classList.add('active');
+        if(tempPlace === 'da-decidere') document.getElementById('btn-decidere').classList.add('active');
+    }
+
+    function previewFile() {
+        const file = document.getElementById('photoInput').files[0];
+        const imgPrev = document.getElementById('imgPreview');
+        const vidPrev = document.getElementById('videoPreview');
+
+        if (file) {
+            fileToUpload = file;
+            const reader = new FileReader();
+            reader.onload = function(e){
+                if(file.type.startsWith('video/')){
+                    imgPrev.style.display = 'none';
+                    vidPrev.src = e.target.result;
+                    vidPrev.style.display = 'block';
+                } else {
+                    vidPrev.style.display = 'none';
+                    imgPrev.src = e.target.result;
+                    imgPrev.style.display = 'block';
+                }
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    async function getCloudinarySignature(date){
+        const token=await auth.currentUser.getIdToken();
+        const response=await fetch('/.netlify/functions/cloudinary-sign',{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+            body:JSON.stringify({date:normalizeDateKey(date)})
+        });
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok) throw new Error(data.error || 'Configurazione Cloudinary non disponibile.');
+        return data;
+    }
+
+    async function uploadFileToCloudinary(file,date){
+        const signed=await getCloudinarySignature(date);
+        const form=new FormData();
+        form.append('file',file);
+        form.append('api_key',signed.apiKey);
+        form.append('timestamp',String(signed.timestamp));
+        form.append('signature',signed.signature);
+        form.append('folder',signed.folder);
+        const endpoint=`https://api.cloudinary.com/v1_1/${encodeURIComponent(signed.cloudName)}/auto/upload`;
+        const response=await fetch(endpoint,{method:'POST',body:form});
+        const result=await response.json().catch(()=>({}));
+        if(!response.ok) throw new Error(result.error?.message || 'Upload Cloudinary non riuscito.');
+        return result;
+    }
+
+    async function uploadPhotoForDate(file, date, note = "") {
+        if(!file || !date) throw new Error("Foto e data sono obbligatorie.");
+        date=normalizeDateKey(date);
+        const cloud=await uploadFileToCloudinary(file,date);
+        const photoRef = await db.collection('photos').add({
+            date,
+            url: cloud.secure_url,
+            cloudinaryPublicId: cloud.public_id,
+            cloudinaryResourceType: cloud.resource_type || (String(file.type).startsWith('video/') ? 'video' : 'image'),
+            width: cloud.width || null,
+            height: cloud.height || null,
+            bytes: cloud.bytes || file.size || null,
+            format: cloud.format || null,
+            fileName: file.name,
+            mimeType: file.type || '',
+            note: note || '',
+            uploadedBy: currentUsername(),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        const photosSnap = await db.collection('photos').where('date','==',date).get();
+        await db.collection('calendar').doc(date).set({
+            photoCount: photosSnap.size,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, {merge:true});
+        return photoRef.id;
+    }
+
+    async function saveDay(){
+        const btn = document.getElementById('saveBtn'); btn.textContent = "Salvataggio..."; btn.disabled = true;
+        try {
+            await db.collection('calendar').doc(selectedDate).set({
+                place: tempPlace || null,
+                isSpecial: tempSpecial,
+                start: document.getElementById('startTime').value || "", 
+                end: document.getElementById('endTime').value || "",
+                note: document.getElementById('noteText').value || "",
+                noteUpdatedBy: currentUsername(),
+                noteUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedBy: currentUsername(),
+                missed: false,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, {merge:true});
+            if(fileToUpload) {
+                btn.textContent = "Upload foto...";
+                await uploadPhotoForDate(fileToUpload, selectedDate, document.getElementById('noteText').value || "");
+            }
+            closeModal();
+        } catch(e) {
+            alert("Errore: " + e.message);
+        } finally {
+            btn.textContent = "Salva"; btn.disabled = false;
+        }
+    }
+
+    async function loadDayPhotos(date){
+        const grid=document.getElementById('dayPhotoGrid');
+        grid.innerHTML='<div style="grid-column:1/-1;color:#777;font-size:12px;">Caricamento...</div>';
+        try{
+            const normalized=normalizeDateKey(date);
+            const padded=paddedDateKey(date);
+            const variants=[...new Set([normalized,padded])];
+            const snap=variants.length===1
+                ? await db.collection('photos').where('date','==',variants[0]).get()
+                : await db.collection('photos').where('date','in',variants).get();
+            const items=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{
+                const ta=a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                const tb=b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                return tb-ta;
+            });
+            grid.innerHTML='';
+            if(items.length===0){ grid.innerHTML='<div style="grid-column:1/-1;color:#777;font-size:12px;">Nessuna foto per questo giorno.</div>'; return; }
+            items.forEach(photo=>{
+                const item=document.createElement('div'); item.className='day-photo-item';
+                const isVideo=(photo.mimeType||'').startsWith('video/') || /\.(mp4|mov|webm)(\?|$)/i.test(photo.url||'');
+                const uploader=displayUsername(photo.uploadedBy);
+                const uploadedAt=photo.createdAt?.toDate ? photo.createdAt.toDate().toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+                item.innerHTML = `${isVideo ? `<video src="${photo.url}" controls></video>` : `<img src="${photo.url}" alt="Ricordo ${date}">`}<button class="photo-delete" onclick="event.stopPropagation();deletePhoto('${photo.id}')"></button><div class="day-photo-meta"> Caricata da <strong>${escapeHtml(uploader)}</strong>${uploadedAt ? `<br> ${escapeHtml(uploadedAt)}` : ''}${photo.note ? `<br> ${escapeHtml(photo.note)}` : ''}</div>`;
+                grid.appendChild(item);
+            });
+        }catch(e){ grid.innerHTML='<div style="grid-column:1/-1;color:#ef5350;font-size:12px;">Errore nel caricamento foto.</div>'; }
+    }
+
+    async function deletePhoto(photoId){
+        if(!confirm('Eliminare questa foto?')) return;
+        const ref=db.collection('photos').doc(photoId);
+        const doc=await ref.get();
+        if(!doc.exists) return;
+        const data=doc.data();
+        if(data.cloudinaryPublicId){
+            try{
+                const token=await auth.currentUser.getIdToken();
+                const response=await fetch('/.netlify/functions/cloudinary-delete',{
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+                    body:JSON.stringify({publicId:data.cloudinaryPublicId, resourceType:data.cloudinaryResourceType || 'image'})
+                });
+                const result=await response.json().catch(()=>({}));
+                if(!response.ok) throw new Error(result.error || 'Eliminazione Cloudinary non riuscita');
+            }catch(e){
+                alert('Non riesco a eliminare il file da Cloudinary: '+e.message);
+                return;
+            }
+        }
+        await ref.delete();
+        const snap=await db.collection('photos').where('date','==',data.date).get();
+        await db.collection('calendar').doc(data.date).set({photoCount:snap.size},{merge:true});
+        if(selectedDate===data.date) loadDayPhotos(data.date);
+    }
+
+    async function uploadFromGallery(){
+        const date=document.getElementById('galleryDate').value;
+        const file=document.getElementById('galleryPhotoInput').files[0];
+        const note=document.getElementById('galleryNote').value.trim();
+        if(!date || !file){ alert('Scegli una data e una foto/video.'); return; }
+        const btn=document.getElementById('galleryUploadBtn'); btn.disabled=true; btn.textContent='Caricamento...';
+        try{
+            await uploadPhotoForDate(file,date,note);
+            document.getElementById('galleryPhotoInput').value='';
+            document.getElementById('galleryNote').value='';
+            document.getElementById('galleryUploadPanel').classList.remove('open');
+            alert('Foto aggiunta al ' + new Date(date+'T12:00:00').toLocaleDateString('it-IT') + '.');
+        }catch(e){ alert('Errore: '+e.message); }
+        finally{ btn.disabled=false; btn.textContent='Aggiungi alla galleria'; }
+    }
+
+    let galleryUnsubscribe=null;
+    let galleryItems=[];
+    let galleryViewerIndex=0;
+
+    function initializeGallery(){
+        if(galleryUnsubscribe) galleryUnsubscribe();
+        galleryUnsubscribe=db.collection('photos').onSnapshot(snap=>{
+            const items=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{
+                const ta=a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                const tb=b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                return tb-ta;
+            });
+            galleryItems=items;
+            renderGallery(items);
+        });
+        if(!document.getElementById('galleryDate').value){
+            const now=new Date();
+            const local=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
+            document.getElementById('galleryDate').value=local;
+        }
+    }
+
+    function renderGallery(items){
+        const grid=document.getElementById('galleryGrid'); grid.innerHTML='';
+        if(items.length===0){ grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;margin:20px;">Ancora nessuna foto.</div>'; return; }
+        items.forEach((photo,index)=>{
+            const card=document.createElement('div'); card.className='gallery-card';
+            const isVideo=(photo.mimeType||'').startsWith('video/') || /\.(mp4|mov|webm)(\?|$)/i.test(photo.url||'');
+            const user=(photo.uploadedBy||'').toLowerCase();
+            card.innerHTML=`${isVideo ? `<video src="${photo.url}" muted playsinline preload="metadata"></video><span class="gallery-video-badge">▶ video</span>` : `<img src="${photo.url}" loading="lazy" alt="Foto della galleria">`}<span class="gallery-author-dot ${user === 'cucci' ? 'cucci' : user === 'cicci' ? 'cicci' : ''}" title="${escapeHtml(displayUsername(photo.uploadedBy))}"></span>`;
+            card.onclick=()=>openPhotoViewer(index);
+            grid.appendChild(card);
+        });
+    }
+
+    function openPhotoViewer(index){
+        if(!galleryItems.length) return;
+        galleryViewerIndex=Math.max(0,Math.min(index,galleryItems.length-1));
+        renderPhotoViewer();
+        const viewer=document.getElementById('photoViewer');
+        viewer.classList.add('open'); viewer.setAttribute('aria-hidden','false');
+        document.body.style.overflow='hidden';
+    }
+
+    function renderPhotoViewer(){
+        const photo=galleryItems[galleryViewerIndex]; if(!photo) return;
+        const media=document.getElementById('viewerMedia');
+        const isVideo=(photo.mimeType||'').startsWith('video/') || /\.(mp4|mov|webm)(\?|$)/i.test(photo.url||'');
+        media.innerHTML=isVideo ? `<video src="${photo.url}" controls autoplay playsinline></video>` : `<img src="${photo.url}" alt="Foto aperta">`;
+        document.getElementById('viewerCounter').textContent=`${galleryViewerIndex+1} / ${galleryItems.length}`;
+        const user=(photo.uploadedBy||'').toLowerCase();
+        const author=document.getElementById('viewerAuthor');
+        author.className='viewer-author '+(user==='cucci'?'cucci':user==='cicci'?'cicci':'');
+        author.textContent=' Caricata da '+displayUsername(photo.uploadedBy);
+        const uploadedAt=photo.createdAt?.toDate ? photo.createdAt.toDate().toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Data di caricamento non disponibile';
+        document.getElementById('viewerUploadedAt').textContent=' '+uploadedAt;
+        const niceDate=photo.date ? new Date(photo.date+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'}) : '—';
+        document.getElementById('viewerDay').textContent=' Giorno: '+niceDate;
+        const note=document.getElementById('viewerNote');
+        note.textContent=photo.note || '';
+        note.style.display=photo.note ? 'block' : 'none';
+    }
+
+    function closePhotoViewer(){
+        const viewer=document.getElementById('photoViewer');
+        viewer.classList.remove('open'); viewer.setAttribute('aria-hidden','true');
+        document.getElementById('viewerMedia').innerHTML='';
+        document.body.style.overflow='';
+    }
+
+    function stepPhoto(delta){
+        if(!galleryItems.length) return;
+        galleryViewerIndex=(galleryViewerIndex+delta+galleryItems.length)%galleryItems.length;
+        renderPhotoViewer();
+    }
+
+    function goToViewerDay(){
+        const photo=galleryItems[galleryViewerIndex]; if(!photo?.date) return;
+        const [y,m]=photo.date.split('-').map(Number);
+        current=new Date(y,m-1,1);
+        closePhotoViewer();
+        showSection('calendar');
+        render(latestData);
+        openModal(photo.date);
+    }
+
+    document.addEventListener('keydown',e=>{
+        if(!document.getElementById('photoViewer')?.classList.contains('open')) return;
+        if(e.key==='Escape') closePhotoViewer();
+        if(e.key==='ArrowLeft') stepPhoto(-1);
+        if(e.key==='ArrowRight') stepPhoto(1);
+    });
+
+    function escapeHtml(value){
+        return String(value).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+    }
+
+    function markAsMissedSingle() {
+        if(confirm("Segna come 'Saltato'?")) {
+            db.collection('calendar').doc(selectedDate).update({missed: true, place: null, start:"", end:"", isSpecial: false}).then(closeModal);
+        }
+    }
+
+    function forceBalanceMonth(){
+        if(!confirm("Riscrivi mese alternato (1 notte a testa)?")) return;
+        const y=current.getFullYear(), m=current.getMonth();
+        const days=new Date(y,m+1,0).getDate();
+        const batch = db.batch();
+        for(let d=1; d<=days; d++){
+            const key=`${y}-${m+1}-${d}`;
+            const place = (d % 2 !== 0) ? 'casa-cicci' : 'casa-cucci';
+            batch.set(db.collection('calendar').doc(key), { place: place, missed: false }, {merge: true}); 
+        }
+        batch.commit().then(() => alert("Fatto!"));
+    }
+
+    function shiftScheduleFromToday(){
+        const today = new Date();
+        const todayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+        if(!confirm("Slittare tutto da OGGI in poi?")) return;
+
+        db.collection('calendar').orderBy(firebase.firestore.FieldPath.documentId()).get().then(snap => {
+            const updates = {}; let foundToday = false; let previousData = null;
+            snap.docs.forEach((doc) => {
+                const key = doc.id;
+                if (key === todayKey) {
+                    foundToday = true; previousData = doc.data(); 
+                    updates[key] = { ...previousData, missed: true, place: null, start: "", end: "" };
+                } else if (foundToday) {
+                    const currentData = doc.data();
+                    if (previousData) updates[key] = { ...previousData, missed: false };
+                    previousData = currentData;
+                }
+            });
+            const batch = db.batch(); Object.keys(updates).forEach(k => batch.set(db.collection('calendar').doc(k), updates[k]));
+            return batch.commit();
+        }).then(() => alert("Slittato!"));
+    }
+
+    function setAllToDecide(){
+        if(!confirm("Tutto 'Da Decidere'?")) return;
+        const y=current.getFullYear(), m=current.getMonth();
+        const days=new Date(y,m+1,0).getDate();
+        const batch = db.batch();
+        for(let d=1; d<=days; d++){
+            batch.set(db.collection('calendar').doc(`${y}-${m+1}-${d}`), { place: 'da-decidere', missed: false }, {merge: true});
+        }
+        batch.commit().then(() => alert("Fatto!"));
+    }
+
+    function resetMonthColors(){
+        if(!confirm("Reset colori? (Rimuove anche lo stato Speciale)")) return;
+        const y=current.getFullYear(), m=current.getMonth();
+        const days=new Date(y,m+1,0).getDate();
+        const batch = db.batch();
+        for(let d=1; d<=days; d++){
+            batch.set(db.collection('calendar').doc(`${y}-${m+1}-${d}`), { place: null, start: "", end: "", missed: false, isSpecial: false }, {merge: true});
+        }
+        batch.commit().then(() => alert("Resettato!"));
+    }
+
+    let calendarUnsubscribe=null;
+    function initializeMonth(){ if(calendarUnsubscribe) calendarUnsubscribe(); calendarUnsubscribe=db.collection('calendar').onSnapshot(snap=>{ let d={}; snap.docs.forEach(doc=>{d[doc.id]=doc.data()}); render(d); }); }
+    function changeMonth(n){ current.setMonth(current.getMonth()+n); render(latestData); }
+    
+    function updateStats(){ 
+        const y=current.getFullYear(), m=current.getMonth();
+        db.collection('calendar').get().then(snap=>{ 
+            let cicci=0, cucci=0, todecide=0, speciale=0, separati=0, fuori=0; 
+            snap.forEach(d=>{ 
+                const p = d.id.split('-');
+                if(parseInt(p[0])===y && parseInt(p[1])===m+1 && !d.data().missed){
+                    if(d.data().place==='casa-cicci') cicci++; 
+                    else if(d.data().place==='casa-cucci') cucci++; 
+                    else if(d.data().place==='separati') separati++;
+                    else if(d.data().place==='fuori') fuori++;
+                    else if(d.data().place==='da-decidere') todecide++; 
+                    if(d.data().isSpecial) speciale++;
+                }
+            }); 
+            document.getElementById('stats').innerHTML = `
+                <div> Cicci: <strong>${cicci}</strong></div>
+                <div>CUORE  Cucci: <strong>${cucci}</strong></div>
+                <div> Separati: <strong>${separati}</strong></div>
+                <div> Fuori: <strong>${fuori}</strong></div>
+                <div> Speciali: <strong>${speciale}</strong></div>
+                <div> Decidere: <strong>${todecide}</strong></div>
+            `; 
+        }); 
+    }
+</script>
+</body>
+</html>
