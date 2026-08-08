@@ -229,7 +229,7 @@
     .gallery-upload-panel {display:none;padding:14px 14px 4px;background:#111;border-bottom:1px solid #242424;}
     .gallery-upload-panel.open {display:block;}
     .gallery-upload-panel .label {margin-top:0;}
-    .gallery-grid {display:grid!important;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important;gap:2px!important;margin:0!important;padding:2px!important;}
+    .gallery-grid {display:block!important;margin:0!important;padding:0!important;background:#020102!important;}
     .gallery-card {position:relative!important;border:0!important;border-radius:0!important;background:#111!important;overflow:hidden!important;aspect-ratio:1/1!important;}
     .gallery-card img,.gallery-card video {width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;background:#111!important;}
     .gallery-card .gallery-meta {display:none!important;}
@@ -239,6 +239,21 @@
     .gallery-video-badge {position:absolute;left:7px;top:7px;background:rgba(0,0,0,.58);border-radius:999px;padding:4px 7px;font-size:11px;}
     @media(max-width:640px){.gallery-grid{grid-template-columns:repeat(3,1fr)!important;}.gallery-card{min-width:0!important;}.dashboard-tile{min-height:125px;padding:15px}.diary-feature{min-height:175px}}
     @media(min-width:1100px){.gallery-grid{grid-template-columns:repeat(6,1fr)!important;}}
+
+
+    .gallery-date-group {background:#020102;}
+    .gallery-date-heading {position:sticky;top:58px;z-index:20;padding:15px 16px 9px;background:rgba(2,1,2,.96);border-bottom:1px solid #421846;font-family:var(--g-display, Georgia, serif);font-size:14px;color:#f3eaf4;letter-spacing:.055em;}
+    .gallery-date-sub {display:block;margin-top:3px;font-family:inherit;font-size:10px;color:#8d7b90;letter-spacing:.03em;}
+    .gallery-date-photos {display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px;padding:2px;background:#020102;}
+    @media(max-width:640px){.gallery-date-photos{grid-template-columns:repeat(3,1fr)}}
+    @media(min-width:1100px){.gallery-date-photos{grid-template-columns:repeat(6,1fr)}}
+    .calendar-book-events {margin-top:4px;width:100%;display:flex;flex-direction:column;gap:2px;}
+    .calendar-book-event {font-size:8px;line-height:1.15;padding:2px 3px;background:rgba(7,4,8,.82);border-left:2px solid #72178b;color:#e4d7e6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+    .calendar-book-event.cucci{border-left-color:#c01934}.calendar-book-event.cicci{border-left-color:#8a20a2}
+    .day-book-events {margin:11px 0 14px;padding:10px;border:1px solid #401744;background:#09060a;}
+    .day-book-events-title {font-family:var(--g-display, Georgia, serif);font-size:10px;color:#b77bc0;margin-bottom:7px;text-transform:uppercase;letter-spacing:.06em;}
+    .day-book-event {padding:7px 8px;margin:5px 0;background:#0d080f;border-left:3px solid #72178b;font-size:12px;}
+    .day-book-event.cucci{border-left-color:#c01934}.day-book-event.cicci{border-left-color:#8a20a2}
 
     /* Visualizzatore foto */
     .photo-viewer {position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.97);display:none;flex-direction:column;color:white;}
@@ -390,7 +405,7 @@
                 <textarea id="galleryNote" placeholder="Descrizione (opzionale)"></textarea>
                 <div class="file-input-wrapper">
                     <button class="btn-upload"> Scegli Foto/Video</button>
-                    <input type="file" id="galleryPhotoInput" accept="image/*,video/*">
+                    <input type="file" id="galleryPhotoInput" accept="image/*,video/*" multiple>
                 </div>
                 <button id="galleryUploadBtn" class="primary" onclick="uploadFromGallery()">Aggiungi alla galleria</button>
             </div>
@@ -436,6 +451,7 @@
         <label class="label">Descrizione del giorno</label>
         <textarea id="noteText" placeholder="Es: Cena fuori, Compleanno, etc..."></textarea>
         <div id="noteAuthorMeta" class="author-meta" style="display:none;"></div>
+        <div id="dayBookEvents" class="day-book-events" style="display:none;"></div>
 
         <label class="label">Foto/Video del giorno</label>
         <div id="dayPhotoGrid" class="day-photo-grid"></div>
@@ -443,7 +459,7 @@
         <video id="videoPreview" class="photo-preview" controls style="display:none;"></video>
         <div class="file-input-wrapper">
             <button class="btn-upload"> Aggiungi Foto/Video</button>
-            <input type="file" id="photoInput" accept="image/*,video/*" onchange="previewFile()">
+            <input type="file" id="photoInput" accept="image/*,video/*" multiple onchange="previewFile()">
         </div>
 
         <div style="display:flex; gap:10px; margin-top: 20px;">
@@ -649,7 +665,7 @@
     let selectedDate=null;
     let tempPlace=null;
     let tempSpecial=false; 
-    let fileToUpload=null;
+    let filesToUpload=[];
     let latestData = {}; 
 
     auth.onAuthStateChanged(async user=>{
@@ -898,6 +914,17 @@
                 if(data.photoUrl || (data.photoCount && data.photoCount > 0)) iconsHtml += '<span class="icon-badge"></span>';
                 iconsHtml += '</div>';
                 el.innerHTML += iconsHtml;
+                const readingEvents=data.readingEvents && typeof data.readingEvents==='object' ? Object.values(data.readingEvents) : [];
+                if(readingEvents.length){
+                    const events=document.createElement('div'); events.className='calendar-book-events';
+                    readingEvents.slice(0,2).forEach(ev=>{
+                        const row=document.createElement('div'); row.className='calendar-book-event '+(ev.user||'');
+                        row.textContent=`${displayUsername(ev.user)} ha letto ${ev.title||'un libro'}`;
+                        row.title=row.textContent; events.appendChild(row);
+                    });
+                    if(readingEvents.length>2){const more=document.createElement('div');more.className='calendar-book-event';more.textContent=`+${readingEvents.length-2} altri`;events.appendChild(more)}
+                    el.appendChild(events);
+                }
             }
             cal.appendChild(el);
         }
@@ -962,7 +989,7 @@
 
     // ---------------- MODAL ----------------
     function openModal(date){ 
-        selectedDate=date; tempPlace=null; tempSpecial=false; fileToUpload=null;
+        selectedDate=date; tempPlace=null; tempSpecial=false; filesToUpload=[];
         const parts = date.split('-');
         const dateObj = new Date(parts[0], parts[1]-1, parts[2]);
         document.getElementById('modalDate').textContent = dateObj.toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'long'});
@@ -972,6 +999,8 @@
         document.getElementById('noteText').value = '';
         document.getElementById('noteAuthorMeta').style.display = 'none';
         document.getElementById('noteAuthorMeta').textContent = '';
+        document.getElementById('dayBookEvents').style.display='none';
+        document.getElementById('dayBookEvents').innerHTML='';
         document.getElementById('photoInput').value = '';
         document.getElementById('imgPreview').style.display = 'none';
         document.getElementById('videoPreview').style.display = 'none';
@@ -985,6 +1014,7 @@
         db.collection('calendar').doc(date).get().then(doc => {
             if(doc.exists){
                 const data = doc.data();
+                renderDayBookEvents(data.readingEvents||{});
                 if(data.place) setPlace(data.place);
                 if(data.isSpecial) { tempSpecial = true; updateSpecialUI(); }
                 if(data.start) document.getElementById('startTime').value = data.start;
@@ -1002,6 +1032,15 @@
         });
         loadDayPhotos(date);
         document.getElementById('modal').style.display='flex'; 
+    }
+
+
+    function renderDayBookEvents(eventsObj){
+        const box=document.getElementById('dayBookEvents'); if(!box) return;
+        const events=eventsObj && typeof eventsObj==='object' ? Object.values(eventsObj) : [];
+        if(!events.length){box.style.display='none';box.innerHTML='';return;}
+        box.style.display='block';
+        box.innerHTML='<div class="day-book-events-title">Libri letti in questo giorno</div>'+events.map(ev=>`<div class="day-book-event ${escapeHtml(ev.user||'')}"><strong>${escapeHtml(displayUsername(ev.user))}</strong> ha letto <strong>${escapeHtml(ev.title||'un libro')}</strong></div>`).join('');
     }
 
     function closeModal(){ document.getElementById('modal').style.display='none'; }
@@ -1023,26 +1062,24 @@
     }
 
     function previewFile() {
-        const file = document.getElementById('photoInput').files[0];
+        const files = Array.from(document.getElementById('photoInput').files || []);
+        filesToUpload = files;
+        const file = files[0];
         const imgPrev = document.getElementById('imgPreview');
         const vidPrev = document.getElementById('videoPreview');
-
-        if (file) {
-            fileToUpload = file;
-            const reader = new FileReader();
-            reader.onload = function(e){
-                if(file.type.startsWith('video/')){
-                    imgPrev.style.display = 'none';
-                    vidPrev.src = e.target.result;
-                    vidPrev.style.display = 'block';
-                } else {
-                    vidPrev.style.display = 'none';
-                    imgPrev.src = e.target.result;
-                    imgPrev.style.display = 'block';
-                }
+        if(!file){ imgPrev.style.display='none'; vidPrev.style.display='none'; return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+            if((file.type||'').startsWith('video/')){
+                imgPrev.style.display='none';
+                vidPrev.src=e.target.result; vidPrev.style.display='block';
+            } else {
+                vidPrev.style.display='none';
+                imgPrev.src=e.target.result; imgPrev.style.display='block';
             }
-            reader.readAsDataURL(file);
-        }
+        };
+        reader.readAsDataURL(file);
+        if(files.length>1) document.getElementById('saveBtn').textContent=`Salva (${files.length} file)`;
     }
 
     async function getCloudinarySignature(date){
@@ -1114,9 +1151,12 @@
                 missed: false,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, {merge:true});
-            if(fileToUpload) {
-                btn.textContent = "Upload foto...";
-                await uploadPhotoForDate(fileToUpload, selectedDate, document.getElementById('noteText').value || "");
+            if(filesToUpload.length) {
+                const total=filesToUpload.length;
+                for(let i=0;i<total;i++){
+                    btn.textContent = `Upload ${i+1}/${total}...`;
+                    await uploadPhotoForDate(filesToUpload[i], selectedDate, document.getElementById('noteText').value || "");
+                }
             }
             closeModal();
         } catch(e) {
@@ -1183,16 +1223,19 @@
 
     async function uploadFromGallery(){
         const date=document.getElementById('galleryDate').value;
-        const file=document.getElementById('galleryPhotoInput').files[0];
+        const files=Array.from(document.getElementById('galleryPhotoInput').files||[]);
         const note=document.getElementById('galleryNote').value.trim();
-        if(!date || !file){ alert('Scegli una data e una foto/video.'); return; }
-        const btn=document.getElementById('galleryUploadBtn'); btn.disabled=true; btn.textContent='Caricamento...';
+        if(!date || !files.length){ alert('Scegli una data e almeno una foto/video.'); return; }
+        const btn=document.getElementById('galleryUploadBtn'); btn.disabled=true;
         try{
-            await uploadPhotoForDate(file,date,note);
+            for(let i=0;i<files.length;i++){
+                btn.textContent=`Caricamento ${i+1}/${files.length}...`;
+                await uploadPhotoForDate(files[i],date,note);
+            }
             document.getElementById('galleryPhotoInput').value='';
             document.getElementById('galleryNote').value='';
             document.getElementById('galleryUploadPanel').classList.remove('open');
-            alert('Foto aggiunta al ' + new Date(date+'T12:00:00').toLocaleDateString('it-IT') + '.');
+            alert(`${files.length} ${files.length===1?'file aggiunto':'file aggiunti'} al ${new Date(date+'T12:00:00').toLocaleDateString('it-IT')}.`);
         }catch(e){ alert('Errore: '+e.message); }
         finally{ btn.disabled=false; btn.textContent='Aggiungi alla galleria'; }
     }
@@ -1205,6 +1248,9 @@
         if(galleryUnsubscribe) galleryUnsubscribe();
         galleryUnsubscribe=db.collection('photos').onSnapshot(snap=>{
             const items=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{
+                const da=paddedDateKey(a.date||'');
+                const dbb=paddedDateKey(b.date||'');
+                if(da!==dbb) return dbb.localeCompare(da);
                 const ta=a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
                 const tb=b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
                 return tb-ta;
@@ -1221,14 +1267,30 @@
 
     function renderGallery(items){
         const grid=document.getElementById('galleryGrid'); grid.innerHTML='';
-        if(items.length===0){ grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;margin:20px;">Ancora nessuna foto.</div>'; return; }
+        if(items.length===0){ grid.innerHTML='<div class="empty-state" style="margin:20px;">Ancora nessuna foto.</div>'; return; }
+        const groups=new Map();
         items.forEach((photo,index)=>{
-            const card=document.createElement('div'); card.className='gallery-card';
-            const isVideo=(photo.mimeType||'').startsWith('video/') || /\.(mp4|mov|webm)(\?|$)/i.test(photo.url||'');
-            const user=(photo.uploadedBy||'').toLowerCase();
-            card.innerHTML=`${isVideo ? `<video src="${photo.url}" muted playsinline preload="metadata"></video><span class="gallery-video-badge">▶ video</span>` : `<img src="${photo.url}" loading="lazy" alt="Foto della galleria">`}<span class="gallery-author-dot ${user === 'cucci' ? 'cucci' : user === 'cicci' ? 'cicci' : ''}" title="${escapeHtml(displayUsername(photo.uploadedBy))}"></span>`;
-            card.onclick=()=>openPhotoViewer(index);
-            grid.appendChild(card);
+            const key=paddedDateKey(photo.date||'') || 'senza-data';
+            if(!groups.has(key)) groups.set(key,[]);
+            groups.get(key).push({photo,index});
+        });
+        groups.forEach((entries,key)=>{
+            const section=document.createElement('section'); section.className='gallery-date-group';
+            let title='Data non disponibile';
+            if(key!=='senza-data'){
+                title=new Date(key+'T12:00:00').toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+            }
+            section.innerHTML=`<div class="gallery-date-heading">${escapeHtml(title)}<span class="gallery-date-sub">${entries.length} ${entries.length===1?'ricordo':'ricordi'}</span></div><div class="gallery-date-photos"></div>`;
+            const photosBox=section.querySelector('.gallery-date-photos');
+            entries.forEach(({photo,index})=>{
+                const card=document.createElement('div'); card.className='gallery-card';
+                const isVideo=(photo.mimeType||'').startsWith('video/') || /\.(mp4|mov|webm)(\?|$)/i.test(photo.url||'');
+                const user=(photo.uploadedBy||'').toLowerCase();
+                card.innerHTML=`${isVideo ? `<video src="${photo.url}" muted playsinline preload="metadata"></video><span class="gallery-video-badge">video</span>` : `<img src="${photo.url}" loading="lazy" alt="Foto della galleria">`}<span class="gallery-author-dot ${user === 'cucci' ? 'cucci' : user === 'cicci' ? 'cicci' : ''}" title="${escapeHtml(displayUsername(photo.uploadedBy))}"></span>`;
+                card.onclick=()=>openPhotoViewer(index);
+                photosBox.appendChild(card);
+            });
+            grid.appendChild(section);
         });
     }
 

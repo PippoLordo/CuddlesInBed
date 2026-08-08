@@ -1,13 +1,116 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Libri</title><link rel="icon" href="favicon.png"><link rel="stylesheet" href="media.css"><script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script></head>
-<body class="books-page"><header class="topbar"><div class="brand books">LIBRI</div><button class="nav-btn" onclick="location.href='index.html'">HOME</button><button class="nav-btn" onclick="location.href='ciccina-tv.html'">CICCINA TV</button><button class="nav-btn" onclick="location.href='videogiochi.html'">VIDEOGIOCHI</button><button class="nav-btn" onclick="location.href='musica.html'">MUSICA</button><div class="nav-spacer"></div><span id="accountPill" class="account-pill"></span></header><div id="statusBanner" class="status-banner"></div>
-<section class="hero"><div class="hero-inner"><div class="eyebrow">La tua libreria personale</div><h1>Biblioteca delle Ombre</h1><p>Cerca libri nel catalogo Open Library, salva pagina e capitolo raggiunti, preferiti, letti e titoli da leggere. Le librerie di Cucci e Cicci restano separate ma puoi vedere cosa ha letto l'altro e cosa avete letto entrambi.</p><div class="searchbar"><input id="searchInput" placeholder="Titolo, autore, ISBN…" autocomplete="off"><button onclick="searchBooks(true)">Cerca</button></div></div></section>
-<main class="page"><section id="searchSection" class="section hidden"><div class="section-head"><h2>Risultati</h2><span id="searchCount" class="section-sub"></span></div><div id="searchResults" class="search-results"></div><div style="margin-top:14px"><button id="moreSearch" class="nav-btn" style="display:none" onclick="searchBooks(false)">Altri risultati</button></div></section>
-<section id="readingSection" class="section"><div class="section-head"><h2>Stai leggendo</h2></div><div id="readingRail" class="rail"></div></section>
-<section id="wantSection" class="section"><div class="section-head"><h2>Vuoi leggere</h2></div><div id="wantRail" class="rail"></div></section>
-<section id="readSection" class="section"><div class="section-head"><h2>Letti</h2></div><div id="readRail" class="rail"></div></section>
-<section id="favoritesSection" class="section"><div class="section-head"><h2>Preferiti</h2></div><div id="favoritesRail" class="rail"></div></section>
-<section id="otherOnlySection" class="section"><div class="section-head"><h2 id="otherOnlyTitle">Letti dall'altro ma non da te</h2></div><div id="otherOnlyRail" class="rail"></div></section>
-<section id="bothSection" class="section"><div class="section-head"><h2>Letti da entrambi</h2></div><div id="bothRail" class="rail"></div></section>
-<div class="credits">Ricerca bibliografica e copertine fornite da <a href="https://openlibrary.org/" target="_blank" rel="noopener">Open Library</a>. I metadati disponibili dipendono dall'edizione e dal record bibliografico.</div></main>
-<div id="detailModal" class="modal" onclick="if(event.target===this)closeDetail()"><div class="modal-card"><div id="modalHero" class="modal-hero"><div class="modal-top"><button class="close-btn" onclick="closeDetail()">×</button></div></div><div id="modalContent" class="modal-content"></div></div></div><div id="toast" class="toast"></div>
-<script src="media-common.js"></script><script src="libri.js"></script></body></html>
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Libri — AIYDIWDWY</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="media.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+.books-page .books-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}
+.books-page .manual-btn{border:1px solid #812b8d;background:#120a14;color:#e7d9e9;padding:11px 16px;font-family:var(--display);font-size:10px;letter-spacing:.08em;cursor:pointer}
+.books-page .manual-btn:hover{border-color:#b13bc0;background:#1b0d1e}
+.books-page .want-wrap{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.books-page .subsection{min-width:0;background:#09060a;border:1px solid #2d1130;padding:14px}
+.books-page .subsection h3{margin:0 0 12px;font-family:var(--display);font-size:13px;color:#c77bd2}
+.books-page .subsection:first-child h3{color:#ec6a7c}
+.books-page .subsection .rail{grid-auto-columns:minmax(145px,175px)}
+.books-page .poster-card{position:relative}
+.books-page .card-edit{position:absolute;z-index:4;right:7px;top:7px;border:1px solid #5f2165;background:rgba(7,4,8,.92);color:#eadcec;padding:6px 8px;font-family:var(--display);font-size:8px;letter-spacing:.06em;cursor:pointer}
+.books-page .card-edit:hover{background:#28102d;border-color:#a238b0}
+.books-page .book-source{display:inline-flex;margin-top:8px;border:1px solid #412047;padding:4px 7px;color:#8e7c92;font-size:10px;text-transform:uppercase}
+.books-page .edit-panel{margin-top:18px;border:1px solid #56205b;background:#09060a;padding:20px}
+.books-page .edit-panel h3{margin:0 0 15px;font-family:var(--display);font-size:15px;color:#e86a7d}
+.books-page .edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.books-page .edit-grid .full{grid-column:1/-1}
+.books-page .edit-cover-preview{width:140px;aspect-ratio:2/3;object-fit:cover;border:1px solid #54205a;background:#100912;margin-top:8px}
+.books-page .edit-cover-row{display:grid;grid-template-columns:150px 1fr;gap:15px;align-items:start}
+.books-page .editor-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+.books-page .small-help{font-size:11px;color:#817284;line-height:1.45;margin-top:6px}
+.books-page .ownership-chip{display:inline-flex;border:1px solid #4c1d50;padding:5px 8px;font-size:10px;color:#baa8bd;margin-top:8px}
+@media(max-width:780px){.books-page .want-wrap{grid-template-columns:1fr}.books-page .edit-grid{grid-template-columns:1fr}.books-page .edit-grid .full{grid-column:auto}.books-page .edit-cover-row{grid-template-columns:1fr}.books-page .edit-cover-preview{width:120px}}
+
+.books-page .library-toolbar{display:flex;justify-content:flex-end;align-items:center;gap:9px;margin:20px 0 4px;flex-wrap:wrap}
+.books-page .library-toolbar label{font-family:var(--display);font-size:9px;color:#9b899e;letter-spacing:.07em;text-transform:uppercase}
+.books-page .library-toolbar select{width:auto;min-width:210px;margin:0;padding:9px 11px;background:#09060a;color:#fff;border:1px solid #4a1c4f;border-radius:0}
+.books-page .read-date-chip{display:inline-flex;margin-top:7px;padding:4px 7px;border:1px solid #4d1d52;color:#bd91c5;font-size:10px}
+
+</style>
+</head>
+<body class="books-page">
+<header class="topbar">
+  <div class="brand books">LIBRI</div>
+  <button class="nav-btn" onclick="location.href='index.html'">HOME</button>
+  <button class="nav-btn" onclick="location.href='ciccina-tv.html'">CICCINA TV</button>
+  <button class="nav-btn" onclick="location.href='videogiochi.html'">VIDEOGIOCHI</button>
+  <button class="nav-btn" onclick="location.href='musica.html'">MUSICA</button>
+  <div class="nav-spacer"></div>
+  <span id="accountPill" class="account-pill"></span>
+</header>
+<div id="statusBanner" class="status-banner"></div>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">La tua libreria personale</div>
+    <h1>Biblioteca delle Ombre</h1>
+    <p>Cerca un libro su Open Library oppure aggiungilo completamente a mano. Ogni libro può essere modificato dopo il salvataggio: copertina, titolo, autore, descrizione, pagine, capitoli, ISBN, editore e gli altri dati restano personalizzati soltanto nel tuo account.</p>
+    <div class="searchbar">
+      <input id="searchInput" placeholder="Titolo, autore, ISBN…" autocomplete="off">
+      <button onclick="searchBooks(true)">Cerca</button>
+    </div>
+    <div class="books-actions">
+      <button class="manual-btn" onclick="openManualBook()">AGGIUNGI LIBRO MANUALMENTE</button>
+    </div>
+  </div>
+</section>
+
+<main class="page">
+  <section id="searchSection" class="section hidden">
+    <div class="section-head"><h2>Risultati</h2><span id="searchCount" class="section-sub"></span></div>
+    <div id="searchResults" class="search-results"></div>
+    <div style="margin-top:14px"><button id="moreSearch" class="nav-btn" style="display:none" onclick="searchBooks(false)">Altri risultati</button></div>
+  </section>
+
+  <div class="library-toolbar"><label for="bookSort">Ordina libreria</label><select id="bookSort" onchange="setBookSort(this.value)"><option value="added">Quando sono stati aggiunti</option><option value="alpha">Ordine alfabetico</option><option value="read">Quando sono stati letti</option></select></div>
+
+  <section id="wantSection" class="section">
+    <div class="section-head"><h2>Vuoi leggere</h2><span class="section-sub">Divisi per acquisto</span></div>
+    <div class="want-wrap">
+      <div class="subsection">
+        <h3>Da comprare</h3>
+        <div id="wantBuyRail" class="rail"></div>
+      </div>
+      <div class="subsection">
+        <h3>Già comprati</h3>
+        <div id="wantOwnedRail" class="rail"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="readingSection" class="section">
+    <div class="section-head"><h2>Stai leggendo</h2></div>
+    <div id="readingRail" class="rail"></div>
+  </section>
+
+  <section id="readSection" class="section"><div class="section-head"><h2>Letti</h2></div><div id="readRail" class="rail"></div></section>
+  <section id="favoritesSection" class="section"><div class="section-head"><h2>Preferiti</h2></div><div id="favoritesRail" class="rail"></div></section>
+  <section id="otherOnlySection" class="section"><div class="section-head"><h2 id="otherOnlyTitle">Letti dall'altro ma non da te</h2></div><div id="otherOnlyRail" class="rail"></div></section>
+  <section id="bothSection" class="section"><div class="section-head"><h2>Letti da entrambi</h2></div><div id="bothRail" class="rail"></div></section>
+
+  <div class="credits">Ricerca bibliografica e copertine iniziali fornite da <a href="https://openlibrary.org/" target="_blank" rel="noopener">Open Library</a>. Le modifiche personali vengono salvate nel tuo account Firestore; le copertine caricate manualmente vengono conservate su Cloudinary.</div>
+</main>
+
+<div id="detailModal" class="modal" onclick="if(event.target===this)closeDetail()">
+  <div class="modal-card">
+    <div id="modalHero" class="modal-hero"><div class="modal-top"><button class="close-btn" onclick="closeDetail()">×</button></div></div>
+    <div id="modalContent" class="modal-content"></div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+<script src="media-common.js"></script>
+<script src="libri.js"></script>
+</body>
+</html>
