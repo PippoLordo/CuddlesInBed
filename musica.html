@@ -1,5 +1,1520 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Musica</title><link rel="icon" href="favicon.png"><link rel="stylesheet" href="media.css"><script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script></head>
-<body class="music-page"><header class="topbar"><div class="brand music">MUSICA</div><button class="nav-btn" onclick="location.href='index.html'">HOME</button><button class="nav-btn" onclick="location.href='ciccina-tv.html'">CICCINA TV</button><button class="nav-btn" onclick="location.href='libri.html'">LIBRI</button><button class="nav-btn" onclick="location.href='videogiochi.html'">VIDEOGIOCHI</button><div class="nav-spacer"></div><span id="accountPill" class="account-pill"></span></header><div id="statusBanner" class="status-banner"></div>
-<section class="hero"><div class="hero-inner"><div class="eyebrow">Brani, album e artisti</div><h1>Archivio Sonoro</h1><p>Cerca nel catalogo Spotify e costruisci la tua raccolta personale separata da quella dell'altro account. Salva preferiti, ascoltati, in ascolto e cose che vuoi ascoltare.</p><div class="searchbar"><input id="searchInput" placeholder="Cerca artista, album o brano…" autocomplete="off"><button onclick="searchMusic(true)">Cerca</button></div></div></section>
-<main class="page"><section id="searchSection" class="section hidden"><div class="section-head"><h2>Risultati</h2><span id="searchCount" class="section-sub"></span></div><div id="searchResults" class="search-results"></div><div style="margin-top:14px"><button id="moreSearch" class="nav-btn" style="display:none" onclick="searchMusic(false)">Altri risultati</button></div></section>
-<section class="section"><div class="section-head"><h2>Stai ascoltando</h2></div><div id="listeningRail" class="rail"></div></section><section class="section"><div class="section-head"><h2>Vuoi ascoltare</h2></div><div id="wantRail" class="rail"></div></section><section class="section"><div class="section-head"><h2>Ascoltati</h2></div><div id="doneRail" class="rail"></div></section><section class="section"><div class="section-head"><h2>Preferiti</h2></div><div id="favoritesRail" class="rail"></div></section><section class="section"><div class="section-head"><h2 id="otherOnlyTitle">Ascoltati dall'altro ma non da te</h2></div><div id="otherOnlyRail" class="rail"></div></section><section class="section"><div class="section-head"><h2>Ascoltati da entrambi</h2></div><div id="bothRail" class="rail"></div></section><div class="credits">Metadati musicali forniti da <b>Spotify Web API</b>. Questa integrazione usa solo dati di catalogo pubblici e non accede al profilo Spotify personale.</div></main><div id="detailModal" class="modal" onclick="if(event.target===this)closeDetail()"><div class="modal-card"><div id="modalHero" class="modal-hero"><div class="modal-top"><button class="close-btn" onclick="closeDetail()">×</button></div></div><div id="modalContent" class="modal-content"></div></div></div><div id="toast" class="toast"></div><script src="media-common.js"></script><script src="musica.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Musica — AIYDIWDWY</title>
+
+<link rel="icon" type="image/x-icon" href="favicon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+:root{
+    --black:#030203;
+    --black-2:#080509;
+    --panel:#0e090f;
+    --panel-2:#160b18;
+    --panel-3:#1c0d20;
+
+    --text:#f5edf6;
+    --muted:#9f91a2;
+
+    --red:#c91d36;
+    --red-light:#f0445c;
+
+    --purple:#74168a;
+    --purple-light:#b33bc4;
+
+    --line:#351438;
+
+    --display:'Cinzel Decorative', Georgia, serif;
+    --body:'Cormorant Garamond', Georgia, serif;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+html,
+body{
+    margin:0;
+    width:100%;
+    min-height:100%;
+    background:var(--black);
+    color:var(--text);
+    font-family:var(--body);
+}
+
+body{
+    overflow-x:hidden;
+    padding-bottom:92px;
+}
+
+/* SCROLLBAR GOTICA */
+*{
+    scrollbar-width:thin;
+    scrollbar-color:var(--purple-light) #09050a;
+}
+
+*::-webkit-scrollbar{
+    width:10px;
+    height:10px;
+}
+
+*::-webkit-scrollbar-track{
+    background:#080509;
+    border-left:1px solid #1d0c1f;
+}
+
+*::-webkit-scrollbar-thumb{
+    background:linear-gradient(
+        180deg,
+        var(--red),
+        var(--purple-light)
+    );
+    border:2px solid #080509;
+}
+
+*::-webkit-scrollbar-thumb:hover{
+    background:linear-gradient(
+        180deg,
+        var(--red-light),
+        #d84be7
+    );
+}
+
+button,
+input{
+    font:inherit;
+}
+
+button{
+    cursor:pointer;
+}
+
+.hidden{
+    display:none !important;
+}
+
+/* STRUTTURA */
+.music-app{
+    min-height:calc(100vh - 92px);
+    display:grid;
+    grid-template-columns:270px minmax(0,1fr);
+    background:
+        radial-gradient(
+            circle at 75% 0,
+            rgba(116,22,138,.25),
+            transparent 34rem
+        ),
+        linear-gradient(
+            180deg,
+            #0b060c 0,
+            #050306 42%,
+            #030203 100%
+        );
+}
+
+/* SIDEBAR */
+.sidebar{
+    position:fixed;
+    top:0;
+    left:0;
+    bottom:92px;
+    width:270px;
+
+    background:#020102;
+    border-right:1px solid #241025;
+
+    padding:24px 18px 20px;
+
+    display:flex;
+    flex-direction:column;
+
+    z-index:20;
+}
+
+.logo{
+    padding:4px 10px 30px;
+}
+
+.logo-small{
+    display:block;
+
+    color:#8f748f;
+
+    font-family:var(--display);
+    font-size:9px;
+    letter-spacing:.2em;
+}
+
+.logo-main{
+    display:block;
+
+    margin-top:5px;
+
+    color:#fff;
+
+    font-family:var(--display);
+    font-size:26px;
+    font-weight:900;
+}
+
+.logo-main span{
+    color:var(--purple-light);
+}
+
+.sidebar-nav{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+}
+
+.nav-button{
+    width:100%;
+
+    border:0;
+    border-left:3px solid transparent;
+
+    background:transparent;
+    color:#97899a;
+
+    padding:12px 13px;
+
+    text-align:left;
+
+    font-family:var(--display);
+    font-size:10px;
+    letter-spacing:.08em;
+
+    transition:.18s;
+}
+
+.nav-button:hover{
+    color:#fff;
+    background:#0c070d;
+}
+
+.nav-button.active{
+    color:#fff;
+    background:#120a14;
+    border-left-color:var(--purple-light);
+}
+
+.sidebar-title{
+    margin:28px 12px 10px;
+
+    color:#685c6b;
+
+    font-family:var(--display);
+    font-size:9px;
+    letter-spacing:.13em;
+}
+
+.sidebar-separator{
+    height:1px;
+    background:#221023;
+
+    margin:19px 9px;
+}
+
+.sidebar-links{
+    display:flex;
+    flex-direction:column;
+    overflow:auto;
+}
+
+.sidebar-link{
+    width:100%;
+    border:0;
+    background:transparent;
+    color:#817485;
+
+    padding:8px 12px;
+
+    text-align:left;
+    font-size:14px;
+
+    cursor:pointer;
+}
+
+.sidebar-link:hover{
+    color:#d7c9da;
+}
+
+.sidebar-account{
+    margin-top:auto;
+
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+
+    padding-top:18px;
+}
+
+.account-pill{
+    border:1px solid #47204b;
+    background:#0a060b;
+
+    padding:9px 11px;
+
+    font-family:var(--display);
+    font-size:10px;
+    letter-spacing:.08em;
+}
+
+.account-pill.cucci{
+    color:#ff7486;
+    border-color:var(--red);
+}
+
+.account-pill.cicci{
+    color:#d77ce4;
+    border-color:var(--purple-light);
+}
+
+.connect-button{
+    width:100%;
+
+    border:1px solid #792b85;
+
+    background:linear-gradient(
+        135deg,
+        #741426,
+        #561061
+    );
+
+    color:#fff;
+
+    padding:11px 13px;
+
+    font-family:var(--display);
+    font-size:9px;
+    letter-spacing:.08em;
+}
+
+.disconnect-button{
+    width:100%;
+
+    border:1px solid #3b173e;
+    background:#0c070d;
+    color:#8f7d92;
+
+    padding:9px 12px;
+
+    font-family:var(--display);
+    font-size:9px;
+}
+
+/* MAIN */
+.main-content{
+    grid-column:2;
+    min-width:0;
+}
+
+/* HEADER */
+.topbar{
+    height:82px;
+
+    position:sticky;
+    top:0;
+    z-index:15;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 32px;
+
+    background:linear-gradient(
+        180deg,
+        rgba(4,2,5,.96),
+        rgba(4,2,5,.82),
+        rgba(4,2,5,.45)
+    );
+
+    backdrop-filter:blur(15px);
+
+    border-bottom:1px solid rgba(71,27,75,.35);
+}
+
+.history-buttons{
+    display:flex;
+    gap:9px;
+}
+
+.circle-button{
+    width:40px;
+    height:40px;
+
+    border-radius:50%;
+    border:1px solid #351638;
+
+    background:#070408;
+    color:#d9cdda;
+
+    font-family:var(--display);
+    font-size:12px;
+}
+
+.circle-button:hover{
+    border-color:var(--purple-light);
+    color:#fff;
+}
+
+.profile-area{
+    display:flex;
+    align-items:center;
+    gap:9px;
+}
+
+.spotify-profile{
+    padding:9px 13px;
+
+    border:1px solid #432047;
+    background:#080509;
+
+    color:#bfaec2;
+
+    font-family:var(--display);
+    font-size:9px;
+    letter-spacing:.06em;
+}
+
+/* CONTENT */
+.content{
+    padding:30px 38px 48px;
+}
+
+.greeting{
+    margin:0 0 25px;
+
+    font-family:var(--display);
+    font-size:32px;
+    font-weight:900;
+}
+
+/* HOME QUICK GRID */
+.quick-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:14px;
+
+    margin-bottom:38px;
+}
+
+.quick-card{
+    height:92px;
+
+    display:grid;
+    grid-template-columns:92px 1fr;
+
+    align-items:center;
+
+    overflow:hidden;
+
+    background:linear-gradient(
+        135deg,
+        #160c18,
+        #0c070d
+    );
+
+    border:1px solid #331536;
+
+    cursor:pointer;
+
+    transition:.18s;
+}
+
+.quick-card:hover{
+    transform:translateY(-2px);
+    border-color:#6f2979;
+    background:linear-gradient(
+        135deg,
+        #201022,
+        #100812
+    );
+}
+
+.quick-card img{
+    width:92px;
+    height:92px;
+    object-fit:cover;
+    background:#130a15;
+}
+
+.quick-title{
+    padding:0 18px;
+
+    font-family:var(--display);
+    font-size:11px;
+    line-height:1.35;
+}
+
+/* SEZIONI */
+.music-section{
+    margin-top:34px;
+}
+
+.section-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+
+    margin-bottom:15px;
+}
+
+.section-header h2{
+    margin:0;
+
+    font-family:var(--display);
+    font-size:20px;
+}
+
+.see-more{
+    border:0;
+    background:transparent;
+    color:#8f7e92;
+
+    font-family:var(--display);
+    font-size:9px;
+    letter-spacing:.08em;
+}
+
+.see-more:hover{
+    color:#d8c8da;
+}
+
+/* CARD ORIZZONTALI */
+.horizontal-scroll{
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:minmax(175px,190px);
+    gap:15px;
+
+    overflow-x:auto;
+
+    padding-bottom:13px;
+}
+
+.music-card{
+    background:#0c070d;
+
+    border:1px solid #251027;
+
+    padding:12px;
+
+    transition:.18s;
+
+    cursor:pointer;
+}
+
+.music-card:hover{
+    transform:translateY(-5px);
+    border-color:#6f2979;
+
+    box-shadow:
+        0 16px 35px rgba(0,0,0,.55),
+        0 0 18px rgba(116,22,138,.08);
+}
+
+.music-card img{
+    display:block;
+
+    width:100%;
+    aspect-ratio:1;
+
+    object-fit:cover;
+
+    background:#160c18;
+
+    margin-bottom:11px;
+}
+
+.music-card strong{
+    display:block;
+
+    font-family:var(--display);
+    font-size:10px;
+    line-height:1.4;
+
+    color:#f2eaf3;
+}
+
+.music-card span{
+    display:block;
+
+    color:#8f8292;
+
+    font-size:13px;
+
+    margin-top:5px;
+}
+
+/* ARTISTI */
+.artist-card img{
+    border-radius:50%;
+}
+
+/* VIEW */
+.music-view{
+    display:none;
+}
+
+.music-view.active{
+    display:block;
+}
+
+/* RANGE */
+.range-tabs{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+
+    margin-bottom:26px;
+}
+
+.range-button{
+    padding:9px 13px;
+
+    border:1px solid #38163b;
+    background:#0c070d;
+    color:#857789;
+
+    font-family:var(--display);
+    font-size:9px;
+
+    letter-spacing:.07em;
+}
+
+.range-button.active{
+    background:linear-gradient(
+        135deg,
+        #6d1225,
+        #50105d
+    );
+
+    color:#fff;
+
+    border-color:#842b90;
+}
+
+/* TRACK LIST */
+.track-list{
+    width:100%;
+
+    display:flex;
+    flex-direction:column;
+}
+
+.track-row{
+    display:grid;
+
+    grid-template-columns:
+        40px
+        50px
+        minmax(180px,1.6fr)
+        minmax(130px,1fr)
+        90px
+        80px;
+
+    gap:12px;
+
+    align-items:center;
+
+    min-height:64px;
+
+    padding:7px 10px;
+
+    border-bottom:1px solid #1f0d21;
+
+    cursor:pointer;
+
+    transition:.14s;
+}
+
+.track-row:hover{
+    background:#0e080f;
+}
+
+.track-number{
+    color:#66596a;
+    text-align:center;
+}
+
+.track-row img{
+    width:48px;
+    height:48px;
+
+    object-fit:cover;
+    background:#150b17;
+}
+
+.track-main strong{
+    display:block;
+    font-size:15px;
+    color:#eee4ef;
+}
+
+.track-main span,
+.track-album,
+.track-time{
+    color:#857789;
+    font-size:13px;
+}
+
+.track-action{
+    border:1px solid #37163b;
+    background:#0b070c;
+    color:#b69ab9;
+
+    padding:7px 8px;
+
+    font-family:var(--display);
+    font-size:8px;
+}
+
+/* SEARCH */
+.search-panel{
+    max-width:850px;
+
+    display:grid;
+    grid-template-columns:1fr auto;
+
+    gap:10px;
+
+    margin-bottom:30px;
+}
+
+.search-panel input{
+    width:100%;
+
+    padding:15px 17px;
+
+    border:1px solid #4b1d50;
+    background:#080509;
+    color:#fff;
+
+    outline:none;
+}
+
+.search-panel input:focus{
+    border-color:var(--purple-light);
+}
+
+.primary-button{
+    border:1px solid #852c92;
+
+    background:linear-gradient(
+        135deg,
+        #791529,
+        #5b1068
+    );
+
+    color:#fff;
+
+    padding:0 22px;
+
+    font-family:var(--display);
+    font-size:9px;
+    letter-spacing:.08em;
+}
+
+/* STATUS */
+.status-banner{
+    display:none;
+
+    margin-bottom:22px;
+
+    border:1px solid #72192b;
+    background:#22090e;
+    color:#ff9eac;
+
+    padding:12px 14px;
+}
+
+.status-banner.show{
+    display:block;
+}
+
+/* PLAYER BOTTOM */
+.player{
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:50;
+
+    height:92px;
+
+    display:grid;
+    grid-template-columns:minmax(260px,1fr) minmax(380px,1.3fr) minmax(230px,1fr);
+
+    align-items:center;
+
+    background:#070408;
+
+    border-top:1px solid #321336;
+
+    padding:10px 18px;
+}
+
+.player-track{
+    min-width:0;
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.player-cover{
+    width:58px;
+    height:58px;
+
+    object-fit:cover;
+    background:#160b18;
+}
+
+.player-info{
+    min-width:0;
+}
+
+.player-title{
+    display:block;
+
+    color:#f3eaf4;
+
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.player-artist{
+    display:block;
+
+    color:#7f7182;
+    font-size:12px;
+
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+
+    margin-top:2px;
+}
+
+.player-controls{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:7px;
+}
+
+.player-buttons{
+    display:flex;
+    align-items:center;
+    gap:13px;
+}
+
+.player-small-button{
+    border:0;
+    background:transparent;
+    color:#8e8091;
+
+    font-family:var(--display);
+    font-size:8px;
+}
+
+.player-small-button:hover{
+    color:#fff;
+}
+
+.player-play{
+    min-width:62px;
+    height:36px;
+
+    border:1px solid #812b8c;
+
+    background:linear-gradient(
+        135deg,
+        #8a182f,
+        #60116e
+    );
+
+    color:#fff;
+
+    font-family:var(--display);
+    font-size:8px;
+}
+
+.player-progress{
+    width:min(580px,90%);
+
+    display:grid;
+    grid-template-columns:35px 1fr 35px;
+    gap:8px;
+
+    align-items:center;
+
+    color:#756879;
+    font-size:10px;
+}
+
+.player-progress input,
+.volume-area input{
+    width:100%;
+
+    accent-color:var(--purple-light);
+}
+
+.player-right{
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:10px;
+}
+
+.player-device{
+    color:#796d7c;
+
+    font-family:var(--display);
+    font-size:8px;
+}
+
+.volume-area{
+    width:105px;
+}
+
+/* TOAST */
+.toast{
+    position:fixed;
+    left:50%;
+    bottom:112px;
+
+    transform:translate(-50%,20px);
+
+    opacity:0;
+    pointer-events:none;
+
+    background:#130a15;
+    color:#fff;
+
+    border:1px solid #702878;
+
+    padding:11px 15px;
+
+    z-index:100;
+
+    font-family:var(--display);
+    font-size:9px;
+
+    transition:.2s;
+}
+
+.toast.show{
+    opacity:1;
+    transform:translate(-50%,0);
+}
+
+/* MOBILE */
+@media(max-width:1050px){
+    .quick-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .track-row{
+        grid-template-columns:35px 50px minmax(160px,1fr) 75px;
+    }
+
+    .track-album{
+        display:none;
+    }
+}
+
+@media(max-width:760px){
+    body{
+        padding-bottom:78px;
+    }
+
+    .music-app{
+        display:block;
+        min-height:calc(100vh - 78px);
+    }
+
+    .sidebar{
+        position:static;
+
+        width:100%;
+        height:auto;
+
+        padding:13px;
+
+        border-right:0;
+        border-bottom:1px solid #241025;
+    }
+
+    .logo{
+        padding:4px 6px 13px;
+    }
+
+    .sidebar-nav{
+        display:grid;
+        grid-template-columns:repeat(4,1fr);
+        gap:5px;
+    }
+
+    .nav-button{
+        text-align:center;
+        padding:9px 5px;
+
+        font-size:7px;
+
+        border-left:0;
+        border-bottom:2px solid transparent;
+    }
+
+    .nav-button.active{
+        border-left:0;
+        border-bottom-color:var(--purple-light);
+    }
+
+    .sidebar-title,
+    .sidebar-separator,
+    .sidebar-links{
+        display:none;
+    }
+
+    .sidebar-account{
+        margin-top:10px;
+
+        display:grid;
+        grid-template-columns:1fr auto auto;
+    }
+
+    .account-pill{
+        display:flex;
+        align-items:center;
+    }
+
+    .connect-button,
+    .disconnect-button{
+        width:auto;
+    }
+
+    .main-content{
+        width:100%;
+    }
+
+    .topbar{
+        height:64px;
+        padding:0 13px;
+    }
+
+    .history-buttons{
+        display:none;
+    }
+
+    .content{
+        padding:22px 13px 35px;
+    }
+
+    .greeting{
+        font-size:24px;
+    }
+
+    .quick-grid{
+        grid-template-columns:1fr;
+        gap:8px;
+    }
+
+    .quick-card{
+        height:72px;
+        grid-template-columns:72px 1fr;
+    }
+
+    .quick-card img{
+        width:72px;
+        height:72px;
+    }
+
+    .horizontal-scroll{
+        grid-auto-columns:145px;
+    }
+
+    .track-row{
+        grid-template-columns:28px 46px minmax(0,1fr) 60px;
+        gap:8px;
+        padding-left:3px;
+        padding-right:3px;
+    }
+
+    .track-row img{
+        width:44px;
+        height:44px;
+    }
+
+    .track-action{
+        display:none;
+    }
+
+    .player{
+        height:78px;
+
+        grid-template-columns:1fr auto;
+
+        padding:8px 10px;
+    }
+
+    .player-cover{
+        width:48px;
+        height:48px;
+    }
+
+    .player-controls{
+        flex-direction:row;
+    }
+
+    .player-progress,
+    .player-right{
+        display:none;
+    }
+
+    .player-buttons{
+        gap:5px;
+    }
+
+    .player-small-button{
+        display:none;
+    }
+
+    .player-play{
+        min-width:56px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="music-app">
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            <span class="logo-small">AIYDIWDWY</span>
+            <span class="logo-main"><span>MUSICA</span></span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <button class="nav-button active" data-view="home">HOME</button>
+            <button class="nav-button" data-view="top">PIÙ ASCOLTATI</button>
+            <button class="nav-button" data-view="search">CERCA</button>
+            <button class="nav-button" data-view="library">LA TUA MUSICA</button>
+        </nav>
+
+        <div class="sidebar-title">ALTRE SEZIONI</div>
+
+        <div class="sidebar-links">
+            <button class="sidebar-link" onclick="location.href='index.html'">Home principale</button>
+            <button class="sidebar-link" onclick="location.href='ciccina-tv.html'">Ciccina TV</button>
+            <button class="sidebar-link" onclick="location.href='libri.html'">Libri</button>
+            <button class="sidebar-link" onclick="location.href='videogiochi.html'">Videogiochi</button>
+        </div>
+
+        <div class="sidebar-separator"></div>
+
+        <div class="sidebar-links">
+            <button class="sidebar-link" data-view="top">Ultime 4 settimane</button>
+            <button class="sidebar-link" data-view="top">Ultimi 6 mesi</button>
+            <button class="sidebar-link" data-view="top">Lungo periodo</button>
+        </div>
+
+        <div class="sidebar-account">
+            <div id="accountPill" class="account-pill">ACCOUNT</div>
+
+            <button id="connectSpotifyButton" class="connect-button">
+                COLLEGA SPOTIFY
+            </button>
+
+            <button id="disconnectSpotifyButton" class="disconnect-button hidden">
+                SCOLLEGA
+            </button>
+        </div>
+
+    </aside>
+
+
+    <main class="main-content">
+
+        <header class="topbar">
+
+            <div class="history-buttons">
+                <button class="circle-button" onclick="history.back()">‹</button>
+                <button class="circle-button" onclick="history.forward()">›</button>
+            </div>
+
+            <div class="profile-area">
+                <div id="spotifyProfile" class="spotify-profile">
+                    SPOTIFY NON COLLEGATO
+                </div>
+            </div>
+
+        </header>
+
+
+        <div class="content">
+
+            <div id="statusBanner" class="status-banner"></div>
+
+
+            <!-- HOME -->
+            <section id="view-home" class="music-view active">
+
+                <h1 id="greeting" class="greeting">Buon ascolto</h1>
+
+                <div id="quickGrid" class="quick-grid">
+
+                    <article class="quick-card" data-action="top-short">
+                        <img id="quick1Cover" src="favicon.png" alt="">
+                        <div class="quick-title">I tuoi brani del momento</div>
+                    </article>
+
+                    <article class="quick-card" data-action="artists-short">
+                        <img id="quick2Cover" src="favicon.png" alt="">
+                        <div class="quick-title">Artisti più ascoltati</div>
+                    </article>
+
+                    <article class="quick-card" data-action="top-medium">
+                        <img id="quick3Cover" src="favicon.png" alt="">
+                        <div class="quick-title">Ultimi 6 mesi</div>
+                    </article>
+
+                    <article class="quick-card" data-action="top-long">
+                        <img id="quick4Cover" src="favicon.png" alt="">
+                        <div class="quick-title">I tuoi classici</div>
+                    </article>
+
+                    <article class="quick-card" data-view="library">
+                        <img id="quick5Cover" src="favicon.png" alt="">
+                        <div class="quick-title">La tua musica</div>
+                    </article>
+
+                    <article class="quick-card" data-view="search">
+                        <img id="quick6Cover" src="favicon.png" alt="">
+                        <div class="quick-title">Scopri qualcosa</div>
+                    </article>
+
+                </div>
+
+
+                <section class="music-section">
+                    <div class="section-header">
+                        <h2>La tua rotazione</h2>
+                        <button class="see-more" data-view="top">VEDI TUTTO</button>
+                    </div>
+
+                    <div id="rotationGrid" class="horizontal-scroll"></div>
+                </section>
+
+
+                <section class="music-section">
+                    <div class="section-header">
+                        <h2>Artisti del momento</h2>
+                        <button class="see-more" data-view="top">VEDI TUTTO</button>
+                    </div>
+
+                    <div id="homeArtists" class="horizontal-scroll"></div>
+                </section>
+
+
+                <section class="music-section">
+                    <div class="section-header">
+                        <h2>Ascoltati di recente</h2>
+                    </div>
+
+                    <div id="recentTracks" class="track-list"></div>
+                </section>
+
+            </section>
+
+
+            <!-- TOP -->
+            <section id="view-top" class="music-view">
+
+                <h1 class="greeting">Più ascoltati</h1>
+
+                <div class="range-tabs">
+
+                    <button class="range-button active" data-range="short_term">
+                        4 SETTIMANE
+                    </button>
+
+                    <button class="range-button" data-range="medium_term">
+                        6 MESI
+                    </button>
+
+                    <button class="range-button" data-range="long_term">
+                        LUNGO PERIODO
+                    </button>
+
+                </div>
+
+
+                <section class="music-section">
+                    <div class="section-header">
+                        <h2>Brani</h2>
+                    </div>
+
+                    <div id="topTracks" class="track-list"></div>
+                </section>
+
+
+                <section class="music-section">
+                    <div class="section-header">
+                        <h2>Artisti</h2>
+                    </div>
+
+                    <div id="topArtists" class="horizontal-scroll"></div>
+                </section>
+
+            </section>
+
+
+            <!-- SEARCH -->
+            <section id="view-search" class="music-view">
+
+                <h1 class="greeting">Cerca nella musica</h1>
+
+                <div class="search-panel">
+                    <input
+                        id="musicSearchInput"
+                        type="search"
+                        placeholder="Cerca un brano, un album o un artista..."
+                        autocomplete="off"
+                    >
+
+                    <button id="musicSearchButton" class="primary-button">
+                        CERCA
+                    </button>
+                </div>
+
+
+                <section class="music-section">
+                    <div class="section-header">
+                        <h2>Risultati</h2>
+                    </div>
+
+                    <div id="musicSearchResults" class="track-list"></div>
+                </section>
+
+            </section>
+
+
+            <!-- LIBRARY -->
+            <section id="view-library" class="music-view">
+
+                <h1 class="greeting">La tua musica</h1>
+
+                <section class="music-section">
+                    <div class="section-header">
+                        <h2>Brani salvati</h2>
+                    </div>
+
+                    <div id="savedTracks" class="track-list"></div>
+                </section>
+
+
+                <section class="music-section">
+                    <div class="section-header">
+                        <h2>Album</h2>
+                    </div>
+
+                    <div id="savedAlbums" class="horizontal-scroll"></div>
+                </section>
+
+
+                <section class="music-section">
+                    <div class="section-header">
+                        <h2>Artisti</h2>
+                    </div>
+
+                    <div id="savedArtists" class="horizontal-scroll"></div>
+                </section>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<!-- PLAYER -->
+<footer class="player">
+
+    <div class="player-track">
+
+        <img
+            id="playerCover"
+            class="player-cover"
+            src="favicon.png"
+            alt=""
+        >
+
+        <div class="player-info">
+            <strong id="playerTitle" class="player-title">
+                Nessun brano
+            </strong>
+
+            <span id="playerArtist" class="player-artist">
+                Collega Spotify per iniziare
+            </span>
+        </div>
+
+    </div>
+
+
+    <div class="player-controls">
+
+        <div class="player-buttons">
+
+            <button id="shuffleButton" class="player-small-button">
+                MIX
+            </button>
+
+            <button id="previousButton" class="player-small-button">
+                PREV
+            </button>
+
+            <button id="playPauseButton" class="player-play">
+                PLAY
+            </button>
+
+            <button id="nextButton" class="player-small-button">
+                NEXT
+            </button>
+
+            <button id="repeatButton" class="player-small-button">
+                LOOP
+            </button>
+
+        </div>
+
+
+        <div class="player-progress">
+
+            <span id="playerCurrentTime">0:00</span>
+
+            <input
+                id="playerSeek"
+                type="range"
+                min="0"
+                max="1000"
+                value="0"
+            >
+
+            <span id="playerDuration">0:00</span>
+
+        </div>
+
+    </div>
+
+
+    <div class="player-right">
+
+        <span id="spotifyDeviceLabel" class="player-device">
+            PLAYER NON ATTIVO
+        </span>
+
+        <div class="volume-area">
+            <input
+                id="playerVolume"
+                type="range"
+                min="0"
+                max="100"
+                value="70"
+            >
+        </div>
+
+    </div>
+
+</footer>
+
+
+<div id="toast" class="toast"></div>
+
+
+<script>
+/*
+    Navigazione grafica.
+    musica.js può continuare a gestire Firebase, OAuth Spotify,
+    caricamento dei dati e player.
+*/
+
+document.querySelectorAll('[data-view]').forEach(element => {
+    element.addEventListener('click', () => {
+        const view = element.dataset.view;
+
+        if(!view) return;
+
+        document
+            .querySelectorAll('.music-view')
+            .forEach(section => section.classList.remove('active'));
+
+        const target = document.getElementById('view-' + view);
+
+        if(target){
+            target.classList.add('active');
+        }
+
+        document
+            .querySelectorAll('.nav-button')
+            .forEach(button => button.classList.remove('active'));
+
+        const nav = document.querySelector('.nav-button[data-view="' + view + '"]');
+
+        if(nav){
+            nav.classList.add('active');
+        }
+
+        window.scrollTo({
+            top:0,
+            behavior:'smooth'
+        });
+    });
+});
+
+
+/* Saluto automatico */
+const hour = new Date().getHours();
+
+const greeting = document.getElementById('greeting');
+
+if(greeting){
+    if(hour < 12){
+        greeting.textContent = 'Buongiorno';
+    }
+    else if(hour < 18){
+        greeting.textContent = 'Buon pomeriggio';
+    }
+    else{
+        greeting.textContent = 'Buonasera';
+    }
+}
+</script>
+
+
+<script src="media-common.js"></script>
+<script src="https://sdk.scdn.co/spotify-player.js"></script>
+<script src="musica.js"></script>
+
+</body>
+</html>
