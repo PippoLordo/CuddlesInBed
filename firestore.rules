@@ -24,6 +24,11 @@ service cloud.firestore {
       allow read, write: if allowedUser();
     }
 
+    // Mappa viaggi condivisa: entrambi possono leggere e modificare i luoghi.
+    match /travelPlaces/{placeId} {
+      allow read, create, update, delete: if allowedUser();
+    }
+
     // Diario privato condiviso: solo i due account autorizzati.
     match /diaryMessages/{messageId} {
       allow read, create, update: if allowedUser();
