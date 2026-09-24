@@ -42,7 +42,7 @@ function drawCountries(){
 function drawMarkers(list){
   markersLayer.clearLayers();const g=new Map();
   list.forEach(function(v){if(v.lat==null||v.lng==null)return;const k=[norm(v.city),norm(v.region),Number(v.lat).toFixed(4),Number(v.lng).toFixed(4)].join("|");if(!g.has(k))g.set(k,[]);g.get(k).push(v)});
-  g.forEach(function(group){const v=group[0],st=status(group),m=L.circleMarker([Number(v.lat),Number(v.lng)],{radius:9,color:"#eee",weight:1.3,fillColor:color(st,false),fillOpacity:1}).addTo(markersLayer);m.bindTooltip((v.city||v.region||v.countryName)+" · "+who([].concat.apply([],group.map(function(x){return x.visitors||[]})))),{className:"country-tooltip"});m.on("click",function(e){L.DomEvent.stopPropagation(e);openLocation(v.countryCode,v.countryName,v.city||"",v.region||"")})});
+  g.forEach(function(group){const v=group[0],st=status(group),m=L.circleMarker([Number(v.lat),Number(v.lng)],{radius:9,color:"#eee",weight:1.3,fillColor:color(st,false),fillOpacity:1}).addTo(markersLayer);m.bindTooltip((v.city||v.region||v.countryName)+" · "+who([].concat.apply([],group.map(function(x){return x.visitors||[]}))),{className:"country-tooltip"});m.on("click",function(e){L.DomEvent.stopPropagation(e);openLocation(v.countryCode,v.countryName,v.city||"",v.region||"")})});
 }
 
 function showWorld(){
