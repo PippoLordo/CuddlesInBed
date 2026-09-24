@@ -29,6 +29,29 @@ service cloud.firestore {
       allow read, create, update, delete: if allowedUser();
     }
 
+    // Archivio condiviso stile BookStack + Cloud: entrambi leggono e modificano tutto.
+    match /archiveShelves/{id} {
+      allow read, create, update, delete: if allowedUser();
+    }
+    match /archiveBooks/{id} {
+      allow read, create, update, delete: if allowedUser();
+    }
+    match /archiveChapters/{id} {
+      allow read, create, update, delete: if allowedUser();
+    }
+    match /archivePages/{id} {
+      allow read, create, update, delete: if allowedUser();
+    }
+    match /archivePageRevisions/{id} {
+      allow read, create, update, delete: if allowedUser();
+    }
+    match /archiveFolders/{id} {
+      allow read, create, update, delete: if allowedUser();
+    }
+    match /archiveFiles/{id} {
+      allow read, create, update, delete: if allowedUser();
+    }
+
     // Diario privato condiviso: solo i due account autorizzati.
     match /diaryMessages/{messageId} {
       allow read, create, update: if allowedUser();

@@ -21,7 +21,11 @@ exports.handler = async (event) => {
   try { payload = JSON.parse(event.body || '{}'); } catch (_) {}
   const cleanDate = String(payload.date || 'senza-data').replace(/[^0-9A-Za-z_-]/g, '-');
   const cleanUser = user.username;
-  const folder = `cuddles-in-bed/${cleanDate}/${cleanUser || 'utente'}`;
+  // "shared-files" è l'archivio comune stile Nextcloud. Il comportamento
+  // originale basato sulla data resta invariato per Galleria e Calendario.
+  const folder = payload.scope === 'shared-files'
+    ? 'cuddles-in-bed/shared-files'
+    : `cuddles-in-bed/${cleanDate}/${cleanUser || 'utente'}`;
   const timestamp = Math.floor(Date.now() / 1000);
   const toSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
   const signature = crypto.createHash('sha1').update(toSign).digest('hex');
