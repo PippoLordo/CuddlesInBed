@@ -113,11 +113,11 @@ async function saveVisit(){
 }
 async function writeCalendarEvents(id,v){
   const days=dateRange(v.startDate,v.endDate||v.startDate);
-  for(let i=0;i<days.length;i+=350){const batch=db.batch();days.slice(i,i+350).forEach(function(day){const obj={};obj["travelEvents."+id]={id:id,countryCode:v.countryCode,countryName:v.countryName,region:v.region||"",city:v.city||"",visitors:v.visitors||[],startDate:v.startDate,endDate:v.endDate||v.startDate,label:who(v.visitors)+" · "+(v.city||v.region||v.countryName)};batch.set(db.collection("calendar").doc(day),obj,{merge:true})});await batch.commit()}
+  for(let i=0;i<days.length;i+=350){const batch=db.batch();days.slice(i,i+350).forEach(function(day){const ev={id:id,countryCode:v.countryCode,countryName:v.countryName,region:v.region||"",city:v.city||"",visitors:v.visitors||[],startDate:v.startDate,endDate:v.endDate||v.startDate,label:who(v.visitors)+" · "+(v.city||v.region||v.countryName)};const obj={travelEvents:{}};obj.travelEvents[id]=ev;batch.set(db.collection("calendar").doc(day),obj,{merge:true})});await batch.commit()}
 }
 async function removeCalendarEvents(v){
   const days=dateRange(v.startDate,v.endDate||v.startDate);
-  for(let i=0;i<days.length;i+=350){const batch=db.batch();days.slice(i,i+350).forEach(function(day){const obj={};obj["travelEvents."+v.id]=firebase.firestore.FieldValue.delete();batch.set(db.collection("calendar").doc(day),obj,{merge:true})});await batch.commit()}
+  for(let i=0;i<days.length;i+=350){const batch=db.batch();days.slice(i,i+350).forEach(function(day){const obj={};obj["travelEvents."+v.id]=firebase.firestore.FieldValue.delete();batch.update(db.collection("calendar").doc(day),obj)});await batch.commit()}
 }
 async function deleteVisit(id){const v=visits.find(function(x){return x.id===id});if(!v||!confirm("Eliminare "+(v.city||v.region||v.countryName)+" dalla mappa?"))return;try{await removeCalendarEvents(v);await db.collection("travelPlaces").doc(id).delete()}catch(e){alert("Non riesco a eliminare il posto: "+e.message)}}
 
