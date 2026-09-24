@@ -32,6 +32,17 @@ function humanBytes(n=0){
 }
 function labelUser(u){return u==="cucci"?"Cucci":u==="cicci"?"Cicci":u||"—"}
 function show(msg){showToast(msg)}
+function workspaceError(label,error){
+  console.error(label,error);
+  const el=document.getElementById("workspaceStatus");
+  if(!el)return;
+  el.style.display="block";
+  const detail=error&&error.code==="permission-denied"
+    ?"Permessi Firestore non ancora pubblicati."
+    :(error?.message||"errore di caricamento");
+  el.textContent=label+": "+detail;
+}
+function clearWorkspaceError(){const el=document.getElementById("workspaceStatus");if(el){el.style.display="none";el.textContent=""}}
 
 function switchArea(area){
   currentArea=area;
@@ -312,7 +323,10 @@ const dz=document.getElementById("dropzone");
 dz.addEventListener("drop",e=>uploadFiles(e.dataTransfer.files));
 
 function subscribeCollection(name,setter){
-  return db.collection(name).onSnapshot(s=>{setter(s.docs.map(d=>({id:d.id,...d.data()})));renderTree();if(currentArea==="cloud")renderCloud()},e=>console.error(name,e));
+  return db.collection(name).onSnapshot(
+    s=>{setter(s.docs.map(d=>({id:d.id,...d.data()})));renderTree();if(currentArea==="cloud")renderCloud()},
+    e=>workspaceError(name,e)
+  );
 }
 function handlePagesSnapshot(next){
   const before=pages.find(p=>p.id===currentPageId),oldVersion=pageVersion(before);
@@ -329,7 +343,10 @@ requireAuth(async function(){
   subscribeCollection(COL.shelves,v=>shelves=v);
   subscribeCollection(COL.books,v=>books=v);
   subscribeCollection(COL.chapters,v=>chapters=v);
-  db.collection(COL.pages).onSnapshot(s=>{handlePagesSnapshot(s.docs.map(d=>({id:d.id,...d.data()})));renderTree()},e=>console.error(e));
+  db.collection(COL.pages).onSnapshot(
+    s=>{handlePagesSnapshot(s.docs.map(d=>({id:d.id,...d.data()})));renderTree()},
+    e=>workspaceError("Pagine condivise",e)
+  );
   subscribeCollection(COL.folders,v=>folders=v);
   subscribeCollection(COL.files,v=>files=v);
   switchArea("wiki");
