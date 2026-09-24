@@ -5,6 +5,15 @@ let visits=[],photos=[],selectedCountryCode="",selectedCountryName="",selectedCi
 const countryByCode=new Map();
 
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function mapDataError(label,error){
+  console.error(label,error);
+  const panel=document.getElementById("sidePanel");
+  if(!panel)return;
+  const detail=error&&error.code==="permission-denied"
+    ?"Permessi Firestore non ancora pubblicati."
+    :(error?.message||"errore di caricamento");
+  panel.innerHTML='<div class="eyebrow">Mappa</div><h2>Caricamento non riuscito</h2><div class="empty">'+esc(label+": "+detail)+'</div>';
+}
 function norm(v){return String(v||"").trim().toLowerCase()}
 function props(f){const p=f&&f.properties||{};return {name:p.name||p.ADMIN||p.NAME||"Paese",code:String(p["ISO3166-1-Alpha-2"]||p.ISO_A2||p.iso_a2||"").toUpperCase()}}
 function pdate(v){if(!v)return null;const d=new Date(String(v).slice(0,10)+"T12:00:00");return isNaN(d)?null:d}
@@ -128,8 +137,14 @@ requireAuth(async function(){
   initMap();
   try{
     await loadGeo();drawCountries();
-    db.collection("travelPlaces").onSnapshot(function(s){visits=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});refresh()},function(e){console.error(e)});
-    db.collection("photos").onSnapshot(function(s){photos=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});refresh()},function(e){console.error(e)});
+    db.collection("travelPlaces").onSnapshot(
+      function(s){visits=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});refresh()},
+      function(e){mapDataError("Luoghi condivisi",e)}
+    );
+    db.collection("photos").onSnapshot(
+      function(s){photos=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});refresh()},
+      function(e){mapDataError("Foto e video",e)}
+    );
     deepLink();
   }catch(e){document.getElementById("sidePanel").innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 });
