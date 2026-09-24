@@ -19,7 +19,9 @@ exports.handler = async (event) => {
   let payload = {};
   try { payload = JSON.parse(event.body || '{}'); } catch (_) {}
   const publicId = String(payload.publicId || '');
-  const resourceType = payload.resourceType === 'video' ? 'video' : 'image';
+  const resourceType = ['image', 'video', 'raw'].includes(payload.resourceType)
+    ? payload.resourceType
+    : 'image';
   if (!publicId) return { statusCode: 400, body: JSON.stringify({ error: 'publicId mancante' }) };
 
   const timestamp = Math.floor(Date.now() / 1000);
