@@ -309,7 +309,17 @@
 
 /* TEMA DARK GOTICO */
 :root{--g-red:#c01934;--g-purple:#72178b;--g-purple2:#b53ac8;--g-line:#451849;--g-display:"Cinzel Decorative",Georgia,serif;--g-body:"Cormorant Garamond",Georgia,serif}body{font-family:var(--g-body)!important;color:#f5edf6!important;background:url("sfondo.jpeg") no-repeat center center fixed!important;background-size:cover!important}.app{background:rgba(8,4,9,.95)!important;border:1px solid var(--g-line)!important;border-radius:0!important;box-shadow:0 24px 80px #000!important}h1,h2,h3,.eyebrow,.label,button,.user-badge,.soon-chip,.diary-author,.viewer-author,.arrival-kicker,.diary-day-title{font-family:var(--g-display)!important;letter-spacing:.055em}input,textarea,select{background:#09060a!important;color:#fff!important;border:1px solid #4c1c51!important;border-radius:0!important}button{border-radius:0!important;text-transform:uppercase!important}button.primary{background:linear-gradient(135deg,#85172b,#5b0d6a)!important;color:#fff!important;border:1px solid #9b2640!important}button.secondary,button.ghost{background:#0d080e!important;color:#ddd0df!important;border:1px solid #502054!important}.diary-feature{border-radius:0!important;border:1px solid #6f1e39!important;background:linear-gradient(120deg,rgba(126,17,37,.58),rgba(53,8,65,.62)),#0b060c!important;box-shadow:inset 5px 0 0 var(--g-red)!important}.dashboard-tile{border-radius:0!important;background:linear-gradient(145deg,#130a15,#080509)!important;border:1px solid #3f1643!important;box-shadow:none!important}.dashboard-tile:nth-child(odd){box-shadow:inset 0 -3px 0 var(--g-red)!important}.dashboard-tile:nth-child(even){box-shadow:inset 0 -3px 0 var(--g-purple)!important}.tile-icon{display:none!important}.soon-chip{border-radius:0!important;background:#160b18!important;border:1px solid #502054!important;color:#b77bc0!important}.calendar-header,.calendar,.day-detail,.diary-compose,.diary-message,.message-arrival-card{background:#0b070c!important;border-color:#401744!important;border-radius:0!important}.diary-message.cucci{border-left:4px solid var(--g-red)!important}.diary-message.cicci{border-left:4px solid var(--g-purple)!important}.heart-btn{border-radius:0!important;background:#100912!important;color:#bca9bf!important;border:1px solid #4c1c51!important}.heart-btn.active{background:#2b0912!important;color:#ff8c9b!important;border-color:#8d2036!important}body.gallery-mode,#gallerySection{background:#020102!important}.gallery-page-header{background:rgba(4,2,5,.96)!important;border-bottom:1px solid #421846!important}.gallery-author-dot{display:none!important}.gallery-video-badge{border-radius:0!important;background:rgba(8,4,9,.86)!important;border:1px solid #5c205f!important}.photo-viewer{background:rgba(0,0,0,.985)!important}.viewer-info{background:#09060a!important;border-top:1px solid #421846!important}.viewer-nav{border-radius:0!important;background:#0d080f!important;border:1px solid #502054!important}.arrival-message{border-radius:0!important;background:#0d080f!important}.arrival-message.cucci{border-left-color:var(--g-red)!important}.arrival-message.cicci{border-left-color:var(--g-purple)!important}
-</style>
+
+    /* ===== MAPPA / VIAGGI ===== */
+    .calendar-travel-events{margin-top:3px;width:100%;display:flex;flex-direction:column;gap:2px}
+    .calendar-travel-event{font-size:8px;line-height:1.15;padding:2px 3px;background:rgba(7,4,8,.88);border-left:2px solid #777;color:#e4d7e6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+    .calendar-travel-event.cucci{border-left-color:#c01934}.calendar-travel-event.cicci{border-left-color:#72178b}.calendar-travel-event.both{border-left-color:#050505;box-shadow:inset 2px 0 #eee}
+    .day-travel-events{margin:11px 0 14px;padding:10px;border:1px solid #401744;background:#09060a;text-align:left}
+    .day-travel-events-title{font-family:var(--g-display,Georgia,serif);font-size:10px;color:#b77bc0;margin-bottom:7px;text-transform:uppercase;letter-spacing:.06em}
+    .day-travel-event{padding:7px 8px;margin:5px 0;background:#0d080f;border-left:3px solid #777;font-size:12px;cursor:pointer}
+    .day-travel-event.cucci{border-left-color:#c01934}.day-travel-event.cicci{border-left-color:#72178b}.day-travel-event.both{border-left-color:#050505;box-shadow:inset 3px 0 #eee}
+    .day-travel-event:hover{background:#160b18}
+
 </head>
 <body>
 
@@ -339,6 +349,9 @@
                     </div>
                     <div class="dashboard-tile gallery-tile" onclick="showSection('gallery')">
                         <span class="tile-icon">️</span><div><h3>Galleria</h3><p>Tutte le foto a schermo pieno.</p></div>
+                    </div>
+                    <div class="dashboard-tile map-tile" onclick="location.href='mappa.html'">
+                        <span class="tile-icon"></span><div><h3>Mappa</h3><p>Paesi, città, viaggi, foto e ricordi.</p></div>
                     </div>
                     <div class="dashboard-tile books-tile" onclick="location.href='libri.html'">
                         <span class="tile-icon"></span><div><h3>Libri</h3><p>Libreria, progressi e confronti.</p></div>
@@ -452,6 +465,7 @@
         <textarea id="noteText" placeholder="Es: Cena fuori, Compleanno, etc..."></textarea>
         <div id="noteAuthorMeta" class="author-meta" style="display:none;"></div>
         <div id="dayBookEvents" class="day-book-events" style="display:none;"></div>
+        <div id="dayTravelEvents" class="day-travel-events" style="display:none;"></div>
 
         <label class="label">Foto/Video del giorno</label>
         <div id="dayPhotoGrid" class="day-photo-grid"></div>
@@ -925,6 +939,20 @@
                     if(readingEvents.length>2){const more=document.createElement('div');more.className='calendar-book-event';more.textContent=`+${readingEvents.length-2} altri`;events.appendChild(more)}
                     el.appendChild(events);
                 }
+                const travelEvents=data.travelEvents && typeof data.travelEvents==='object' ? Object.values(data.travelEvents) : [];
+                if(travelEvents.length){
+                    const travels=document.createElement('div'); travels.className='calendar-travel-events';
+                    travelEvents.slice(0,2).forEach(ev=>{
+                        const visitors=Array.isArray(ev.visitors)?ev.visitors:[];
+                        const st=visitors.includes('cucci')&&visitors.includes('cicci')?'both':visitors.includes('cucci')?'cucci':visitors.includes('cicci')?'cicci':'';
+                        const row=document.createElement('div'); row.className='calendar-travel-event '+st;
+                        row.textContent=ev.city||ev.region||ev.countryName||'Viaggio';
+                        row.title=ev.label||row.textContent;
+                        travels.appendChild(row);
+                    });
+                    if(travelEvents.length>2){const more=document.createElement('div');more.className='calendar-travel-event';more.textContent='+'+(travelEvents.length-2)+' viaggi';travels.appendChild(more)}
+                    el.appendChild(travels);
+                }
             }
             cal.appendChild(el);
         }
@@ -1001,6 +1029,8 @@
         document.getElementById('noteAuthorMeta').textContent = '';
         document.getElementById('dayBookEvents').style.display='none';
         document.getElementById('dayBookEvents').innerHTML='';
+        document.getElementById('dayTravelEvents').style.display='none';
+        document.getElementById('dayTravelEvents').innerHTML='';
         document.getElementById('photoInput').value = '';
         document.getElementById('imgPreview').style.display = 'none';
         document.getElementById('videoPreview').style.display = 'none';
@@ -1015,6 +1045,7 @@
             if(doc.exists){
                 const data = doc.data();
                 renderDayBookEvents(data.readingEvents||{});
+                renderDayTravelEvents(data.travelEvents||{});
                 if(data.place) setPlace(data.place);
                 if(data.isSpecial) { tempSpecial = true; updateSpecialUI(); }
                 if(data.start) document.getElementById('startTime').value = data.start;
@@ -1041,6 +1072,23 @@
         if(!events.length){box.style.display='none';box.innerHTML='';return;}
         box.style.display='block';
         box.innerHTML='<div class="day-book-events-title">Libri letti in questo giorno</div>'+events.map(ev=>`<div class="day-book-event ${escapeHtml(ev.user||'')}"><strong>${escapeHtml(displayUsername(ev.user))}</strong> ha letto <strong>${escapeHtml(ev.title||'un libro')}</strong></div>`).join('');
+    }
+
+    function renderDayTravelEvents(eventsObj){
+        const box=document.getElementById('dayTravelEvents'); if(!box) return;
+        const events=eventsObj && typeof eventsObj==='object' ? Object.values(eventsObj) : [];
+        if(!events.length){box.style.display='none';box.innerHTML='';return;}
+        box.style.display='block'; box.innerHTML='<div class="day-travel-events-title">Viaggi e luoghi di questo giorno</div>';
+        events.forEach(ev=>{
+            const visitors=Array.isArray(ev.visitors)?ev.visitors:[];
+            const st=visitors.includes('cucci')&&visitors.includes('cicci')?'both':visitors.includes('cucci')?'cucci':visitors.includes('cicci')?'cicci':'';
+            const who=visitors.includes('cucci')&&visitors.includes('cicci')?'Cucci e Cicci':visitors.includes('cucci')?'Cucci':visitors.includes('cicci')?'Cicci':'Noi';
+            const place=ev.city||ev.region||ev.countryName||'un luogo';
+            const row=document.createElement('div'); row.className='day-travel-event '+st;
+            row.innerHTML='<strong>'+escapeHtml(who)+'</strong> · '+escapeHtml(place)+(ev.countryName&&place!==ev.countryName?' · '+escapeHtml(ev.countryName):'');
+            row.onclick=()=>{location.href='mappa.html?country='+encodeURIComponent(ev.countryCode||'')+'&city='+encodeURIComponent(ev.city||'')+'&region='+encodeURIComponent(ev.region||'')};
+            box.appendChild(row);
+        });
     }
 
     function closeModal(){ document.getElementById('modal').style.display='none'; }
