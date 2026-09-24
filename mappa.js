@@ -24,6 +24,17 @@ function who(v){const a=Array.isArray(v)?v:[];return a.includes("cucci")&&a.incl
 function color(st,country){return st==="cucci"?"#b3132b":st==="cicci"?"#6d1b7b":st==="both"?"#123d2b":"#555158"}
 function countryVisits(c){return visits.filter(function(v){return String(v.countryCode||"").toUpperCase()===String(c||"").toUpperCase()})}
 function locationVisits(c,city,region){const cc=norm(city),rr=norm(region);return countryVisits(c).filter(function(v){if(cc)return norm(v.city)===cc;if(rr)return norm(v.region)===rr&&!v.city;return true})}
+function isFavoritePlace(list){return list.some(function(v){return v.favorite===true})}
+function favoriteBadge(list){return isFavoritePlace(list)?'<span class="favorite-badge">PREFERITO</span>':""}
+function favoritePlaces(){
+  const grouped=new Map();
+  visits.filter(function(v){return v.favorite===true}).forEach(function(v){
+    const key=[String(v.countryCode||"").toUpperCase(),norm(v.city),norm(v.region)].join("|");
+    if(!grouped.has(key))grouped.set(key,{countryCode:v.countryCode||"",countryName:v.countryName||"",city:v.city||"",region:v.region||"",items:[]});
+    grouped.get(key).items.push(v);
+  });
+  return [...grouped.values()].sort(function(a,b){return (a.city||a.region||a.countryName).localeCompare(b.city||b.region||b.countryName,"it")});
+}
 function hasDate(v,k){const d=pdate(k),a=pdate(v.startDate),b=pdate(v.endDate||v.startDate);return !!(d&&a&&b&&d>=a&&d<=b)}
 function mediaFor(list){return photos.filter(function(p){return list.some(function(v){return hasDate(v,p.date)})}).sort(function(a,b){const da=String(a.date||""),db=String(b.date||"");if(da!==db)return db.localeCompare(da);return (b.createdAt&&b.createdAt.toMillis?b.createdAt.toMillis():0)-(a.createdAt&&a.createdAt.toMillis?a.createdAt.toMillis():0)})}
 function dateRange(a,b){let x=pdate(a),z=pdate(b||a),out=[],n=0;if(!x||!z)return out;while(x<=z&&n<3700){out.push(x.getFullYear()+"-"+(x.getMonth()+1)+"-"+x.getDate());x.setDate(x.getDate()+1);n++}return out}
@@ -51,7 +62,7 @@ function drawCountries(){
 function drawMarkers(list){
   markersLayer.clearLayers();const g=new Map();
   list.forEach(function(v){if(v.lat==null||v.lng==null)return;const k=[norm(v.city),norm(v.region),Number(v.lat).toFixed(4),Number(v.lng).toFixed(4)].join("|");if(!g.has(k))g.set(k,[]);g.get(k).push(v)});
-  g.forEach(function(group){const v=group[0],st=status(group),m=L.circleMarker([Number(v.lat),Number(v.lng)],{radius:9,color:"#eee",weight:1.3,fillColor:color(st,false),fillOpacity:1}).addTo(markersLayer);m.bindTooltip((v.city||v.region||v.countryName)+" · "+who([].concat.apply([],group.map(function(x){return x.visitors||[]}))),{className:"country-tooltip"});m.on("click",function(e){L.DomEvent.stopPropagation(e);openLocation(v.countryCode,v.countryName,v.city||"",v.region||"")})});
+  g.forEach(function(group){const v=group[0],st=status(group),fav=isFavoritePlace(group),m=L.circleMarker([Number(v.lat),Number(v.lng)],{radius:fav?11:9,color:fav?"#f0bfd1":"#eee",weight:fav?2.5:1.3,fillColor:color(st,false),fillOpacity:1}).addTo(markersLayer);m.bindTooltip((fav?"Preferito · ":"")+(v.city||v.region||v.countryName)+" · "+who([].concat.apply([],group.map(function(x){return x.visitors||[]}))),{className:"country-tooltip"});m.on("click",function(e){L.DomEvent.stopPropagation(e);openLocation(v.countryCode,v.countryName,v.city||"",v.region||"")})});
 }
 
 function showWorld(){
@@ -73,13 +84,15 @@ function renderWorld(){
   const by=new Map();visits.forEach(function(v){const c=String(v.countryCode||"").toUpperCase();if(!c)return;if(!by.has(c))by.set(c,[]);by.get(c).push(v)});
   const cityCount=new Set(visits.filter(function(v){return v.city}).map(function(v){return v.countryCode+"|"+norm(v.city)})).size;
   const days=new Set([].concat.apply([],visits.map(function(v){return dateRange(v.startDate,v.endDate||v.startDate)}))).size;
-  const rows=[...by.entries()].sort(function(a,b){return (a[1][0].countryName||a[0]).localeCompare(b[1][0].countryName||b[0],"it")}).map(function(x){const c=x[0],l=x[1],n=l[0].countryName||c,st=status(l);return '<div class="visit-card '+st+'" onclick="openCountry(\''+esc(c)+'\',\''+esc(n)+'\')"><div class="visit-title">'+esc(n)+'</div><div class="visit-meta">'+l.length+' '+(l.length===1?"permanenza":"permanenze")+' · '+esc(who([].concat.apply([],l.map(function(v){return v.visitors||[]}))))+'</div></div>'}).join("");
-  document.getElementById("sidePanel").innerHTML='<div class="eyebrow">Mappa condivisa</div><h2>Mondo</h2><p class="muted">Rosso = solo Cucci, viola = solo Cicci, verde scuro = entrambi. Apri un paese per vedere regioni e città.</p><div class="summary"><div class="stat"><strong>'+by.size+'</strong><span>paesi</span></div><div class="stat"><strong>'+cityCount+'</strong><span>città</span></div><div class="stat"><strong>'+days+'</strong><span>giorni segnati</span></div></div><div class="section-title">Paesi visitati</div>'+(rows||'<div class="empty">Ancora nessun paese segnato.</div>');
+  const rows=[...by.entries()].sort(function(a,b){return (a[1][0].countryName||a[0]).localeCompare(b[1][0].countryName||b[0],"it")}).map(function(x){const c=x[0],l=x[1],n=l[0].countryName||c,st=status(l);return '<div class="visit-card '+st+(isFavoritePlace(l)?' favorite-card':'')+'" onclick="openCountry(\''+esc(c)+'\',\''+esc(n)+'\')"><div class="visit-title">'+esc(n)+favoriteBadge(l)+'</div><div class="visit-meta">'+l.length+' '+(l.length===1?"permanenza":"permanenze")+' · '+esc(who([].concat.apply([],l.map(function(v){return v.visitors||[]}))))+'</div></div>'}).join("");
+  const favs=favoritePlaces();
+  const favRows=favs.map(function(g){const label=g.city||g.region||g.countryName,st=status(g.items);return '<div class="visit-card '+st+' favorite-card" onclick="openLocation(\''+esc(g.countryCode)+'\',\''+esc(g.countryName)+'\',\''+esc(g.city)+'\',\''+esc(g.region)+'\')"><div class="visit-title">'+esc(label)+'<span class="favorite-badge">PREFERITO</span></div><div class="visit-meta">'+esc(g.countryName)+(label!==g.countryName?' · '+esc(who([].concat.apply([],g.items.map(function(v){return v.visitors||[]})))):'')+'</div></div>'}).join("");
+  document.getElementById("sidePanel").innerHTML='<div class="eyebrow">Mappa condivisa</div><h2>Mondo</h2><p class="muted">Rosso = solo Cucci, viola = solo Cicci, verde scuro = entrambi. Apri un paese per vedere regioni e città.</p><div class="summary"><div class="stat"><strong>'+by.size+'</strong><span>paesi</span></div><div class="stat"><strong>'+cityCount+'</strong><span>città</span></div><div class="stat"><strong>'+favs.length+'</strong><span>preferiti</span></div></div><div class="section-title">Posti preferiti</div>'+(favRows||'<div class="empty">Nessun posto preferito.</div>')+'<div class="section-title">Paesi visitati</div>'+(rows||'<div class="empty">Ancora nessun paese segnato.</div>');
 }
 function renderCountry(code,name){
   const list=countryVisits(code),media=mediaFor(list),g=new Map();
   list.forEach(function(v){const k=norm(v.city)+"|"+norm(v.region),label=v.city||v.region||"Paese";if(!g.has(k))g.set(k,{label:label,city:v.city||"",region:v.region||"",items:[]});g.get(k).items.push(v)});
-  const places=[...g.values()].sort(function(a,b){return a.label.localeCompare(b.label,"it")}).map(function(x){const st=status(x.items);return '<div class="visit-card '+st+'" onclick="openLocation(\''+esc(code)+'\',\''+esc(name)+'\',\''+esc(x.city)+'\',\''+esc(x.region)+'\')"><div class="visit-title">'+esc(x.label)+'</div><div class="visit-meta">'+esc(who([].concat.apply([],x.items.map(function(v){return v.visitors||[]}))))+' · '+x.items.length+' '+(x.items.length===1?"visita":"visite")+'</div></div>'}).join("");
+  const places=[...g.values()].sort(function(a,b){return a.label.localeCompare(b.label,"it")}).map(function(x){const st=status(x.items);return '<div class="visit-card '+st+(isFavoritePlace(x.items)?' favorite-card':'')+'" onclick="openLocation(\''+esc(code)+'\',\''+esc(name)+'\',\''+esc(x.city)+'\',\''+esc(x.region)+'\')"><div class="visit-title">'+esc(x.label)+favoriteBadge(x.items)+'</div><div class="visit-meta">'+esc(who([].concat.apply([],x.items.map(function(v){return v.visitors||[]}))))+' · '+x.items.length+' '+(x.items.length===1?"visita":"visite")+'</div></div>'}).join("");
   document.getElementById("sidePanel").innerHTML='<button class="mini detail-back" onclick="showWorld()">← Mondo</button><div class="eyebrow">Paese</div><h2>'+esc(name)+'</h2><p class="muted">Qui trovi insieme tutti i ricordi del paese. Scegli una città o regione per filtrare.</p><div class="summary"><div class="stat"><strong>'+g.size+'</strong><span>luoghi</span></div><div class="stat"><strong>'+list.length+'</strong><span>visite</span></div><div class="stat"><strong>'+media.length+'</strong><span>foto/video</span></div></div><button class="action primary" style="width:100%" onclick="openVisitModal(\''+esc(code)+'\')">Aggiungi un luogo in '+esc(name)+'</button><div class="section-title">Città e regioni</div>'+(places||'<div class="empty">Nessuna città o regione registrata.</div>')+'<div class="section-title">Tutte le note del paese</div>'+renderNotes(list)+'<div class="section-title">Foto e video del paese</div>'+renderMedia(media);
 }
 function renderLocation(code,name,city,region){
@@ -89,7 +102,7 @@ function renderLocation(code,name,city,region){
 }
 function visitCard(v,actions){
   const period=v.startDate===v.endDate||!v.endDate?fmt(v.startDate):fmt(v.startDate)+" → "+fmt(v.endDate);
-  return '<div class="visit-card '+status([v])+'"><div class="visit-title">'+esc(v.city||v.region||v.countryName||"Luogo")+'</div><div class="visit-meta">'+esc(period)+' · '+esc(who(v.visitors))+'</div>'+(v.notes?'<div class="visit-note">'+esc(v.notes)+'</div>':"")+(actions?'<div class="card-actions"><button class="mini" onclick="editVisit(\''+v.id+'\')">Edit</button><button class="mini danger" onclick="deleteVisit(\''+v.id+'\')">Elimina</button></div>':"")+'</div>';
+  return '<div class="visit-card '+status([v])+(v.favorite===true?' favorite-card':'')+'"><div class="visit-title">'+esc(v.city||v.region||v.countryName||"Luogo")+(v.favorite===true?'<span class="favorite-badge">PREFERITO</span>':"")+'</div><div class="visit-meta">'+esc(period)+' · '+esc(who(v.visitors))+'</div>'+(v.notes?'<div class="visit-note">'+esc(v.notes)+'</div>':"")+(actions?'<div class="card-actions"><button class="mini" onclick="editVisit(\''+v.id+'\')">Edit</button><button class="mini" onclick="toggleFavorite(\''+v.id+'\')">'+(v.favorite===true?'Togli preferito':'Preferito')+'</button><button class="mini danger" onclick="deleteVisit(\''+v.id+'\')">Elimina</button></div>':"")+'</div>';
 }
 function renderNotes(list){
   const n=list.filter(function(v){return String(v.notes||"").trim()}).sort(function(a,b){return String(b.startDate).localeCompare(String(a.startDate))});
@@ -103,17 +116,17 @@ function openMediaViewer(id){const p=photos.find(function(x){return x.id===id});
 function closeMediaViewer(){document.getElementById("mediaViewer").classList.remove("open");document.getElementById("viewerMedia").innerHTML=""}
 
 function openVisitModal(code){
-  editingVisitId=null;draftVisitors=[];document.getElementById("visitModalTitle").textContent="Aggiungi un posto";["regionInput","cityInput","startDateInput","endDateInput","notesInput"].forEach(function(id){document.getElementById(id).value=""});document.getElementById("countrySelect").value=code||selectedCountryCode||"";document.getElementById("latInput").value=clickedLatLng?clickedLatLng.lat.toFixed(6):"";document.getElementById("lngInput").value=clickedLatLng?clickedLatLng.lng.toFixed(6):"";updateWhoUI();document.getElementById("visitModal").classList.add("open")
+  editingVisitId=null;draftVisitors=[];document.getElementById("visitModalTitle").textContent="Aggiungi un posto";["regionInput","cityInput","startDateInput","endDateInput","notesInput"].forEach(function(id){document.getElementById(id).value=""});document.getElementById("favoriteInput").checked=false;document.getElementById("countrySelect").value=code||selectedCountryCode||"";document.getElementById("latInput").value=clickedLatLng?clickedLatLng.lat.toFixed(6):"";document.getElementById("lngInput").value=clickedLatLng?clickedLatLng.lng.toFixed(6):"";updateWhoUI();document.getElementById("visitModal").classList.add("open")
 }
 function closeVisitModal(){document.getElementById("visitModal").classList.remove("open")}
 function toggleVisitor(u){const s=new Set(draftVisitors);s.has(u)?s.delete(u):s.add(u);draftVisitors=[...s];updateWhoUI()}
 function updateWhoUI(){document.getElementById("whoCucci").classList.toggle("active",draftVisitors.includes("cucci"));document.getElementById("whoCicci").classList.toggle("active",draftVisitors.includes("cicci"))}
-function editVisit(id){const v=visits.find(function(x){return x.id===id});if(!v)return;editingVisitId=id;draftVisitors=[...(v.visitors||[])];document.getElementById("visitModalTitle").textContent="Modifica posto";document.getElementById("countrySelect").value=v.countryCode||"";document.getElementById("regionInput").value=v.region||"";document.getElementById("cityInput").value=v.city||"";document.getElementById("startDateInput").value=v.startDate||"";document.getElementById("endDateInput").value=v.endDate||v.startDate||"";document.getElementById("latInput").value=v.lat==null?"":v.lat;document.getElementById("lngInput").value=v.lng==null?"":v.lng;document.getElementById("notesInput").value=v.notes||"";updateWhoUI();document.getElementById("visitModal").classList.add("open")}
+function editVisit(id){const v=visits.find(function(x){return x.id===id});if(!v)return;editingVisitId=id;draftVisitors=[...(v.visitors||[])];document.getElementById("visitModalTitle").textContent="Modifica posto";document.getElementById("countrySelect").value=v.countryCode||"";document.getElementById("regionInput").value=v.region||"";document.getElementById("cityInput").value=v.city||"";document.getElementById("startDateInput").value=v.startDate||"";document.getElementById("endDateInput").value=v.endDate||v.startDate||"";document.getElementById("latInput").value=v.lat==null?"":v.lat;document.getElementById("lngInput").value=v.lng==null?"":v.lng;document.getElementById("notesInput").value=v.notes||"";document.getElementById("favoriteInput").checked=v.favorite===true;updateWhoUI();document.getElementById("visitModal").classList.add("open")}
 
 async function saveVisit(){
   const code=document.getElementById("countrySelect").value,c=countryByCode.get(code),region=document.getElementById("regionInput").value.trim(),city=document.getElementById("cityInput").value.trim(),start=document.getElementById("startDateInput").value,end=document.getElementById("endDateInput").value||start,notes=document.getElementById("notesInput").value.trim(),la=document.getElementById("latInput").value,lo=document.getElementById("lngInput").value;
   if(!c)return alert("Scegli un paese.");if(!city&&!region)return alert("Inserisci almeno una città o una regione.");if(!start||!end)return alert("Inserisci le date.");if(pdate(end)<pdate(start))return alert("La data finale non può essere precedente a quella iniziale.");if(!draftVisitors.length)return alert("Seleziona almeno Cucci o Cicci.");
-  const payload={countryCode:code,countryName:c.name,region:region,city:city,startDate:start,endDate:end,visitors:[...draftVisitors],notes:notes,lat:la===""?null:Number(la),lng:lo===""?null:Number(lo),updatedBy:currentUsername,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+  const payload={countryCode:code,countryName:c.name,region:region,city:city,startDate:start,endDate:end,visitors:[...draftVisitors],notes:notes,favorite:document.getElementById("favoriteInput").checked===true,lat:la===""?null:Number(la),lng:lo===""?null:Number(lo),updatedBy:currentUsername,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
   try{
     if(editingVisitId){const old=visits.find(function(v){return v.id===editingVisitId});if(old)await removeCalendarEvents(old);await db.collection("travelPlaces").doc(editingVisitId).set(payload,{merge:true});await writeCalendarEvents(editingVisitId,payload)}
     else{payload.createdBy=currentUsername;payload.createdAt=firebase.firestore.FieldValue.serverTimestamp();const ref=await db.collection("travelPlaces").add(payload);await writeCalendarEvents(ref.id,payload)}
@@ -127,6 +140,18 @@ async function writeCalendarEvents(id,v){
 async function removeCalendarEvents(v){
   const days=dateRange(v.startDate,v.endDate||v.startDate);
   for(let i=0;i<days.length;i+=350){const batch=db.batch();days.slice(i,i+350).forEach(function(day){const obj={};obj["travelEvents."+v.id]=firebase.firestore.FieldValue.delete();batch.update(db.collection("calendar").doc(day),obj)});await batch.commit()}
+}
+async function toggleFavorite(id){
+  const v=visits.find(function(x){return x.id===id});if(!v)return;
+  try{
+    await db.collection("travelPlaces").doc(id).set({
+      favorite:v.favorite!==true,
+      favoriteUpdatedBy:currentUsername,
+      favoriteUpdatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy:currentUsername,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+  }catch(e){alert("Non riesco ad aggiornare il preferito: "+e.message)}
 }
 async function deleteVisit(id){const v=visits.find(function(x){return x.id===id});if(!v||!confirm("Eliminare "+(v.city||v.region||v.countryName)+" dalla mappa?"))return;try{await removeCalendarEvents(v);await db.collection("travelPlaces").doc(id).delete()}catch(e){alert("Non riesco a eliminare il posto: "+e.message)}}
 
