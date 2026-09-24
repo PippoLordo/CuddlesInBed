@@ -56,7 +56,12 @@ button{cursor:pointer}
 .visit-card,.note-card{border:1px solid #352038;background:#0c080d;padding:12px;margin-bottom:9px;cursor:pointer}
 .visit-card:hover{border-color:#72437b}
 .visit-card.cucci{border-left:4px solid var(--red)}.visit-card.cicci{border-left:4px solid var(--purple)}.visit-card.both{border-left:4px solid var(--green);box-shadow:inset 4px 0 #8aa996}
-.visit-title{font-family:var(--display);font-size:12px}.visit-meta{font-size:12px;color:#b9aabb;margin-top:5px}.visit-note{margin-top:7px;line-height:1.35}
+.visit-title{font-family:var(--display);font-size:12px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}.visit-meta{font-size:12px;color:#b9aabb;margin-top:5px}.visit-note{margin-top:7px;line-height:1.35}
+.favorite-badge{display:inline-block;padding:2px 6px;border:1px solid #8d395f;background:#1a0b13;color:#f0bfd1;font-family:var(--display);font-size:8px;letter-spacing:.07em}
+.favorite-card{box-shadow:inset 0 0 0 1px #6f2a52}
+.favorite-toggle{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid #4a234d;background:#0e090f;cursor:pointer}
+.favorite-toggle input{width:auto;margin:0;accent-color:#8d294f}
+.favorite-toggle span{font-family:var(--display);font-size:10px;letter-spacing:.05em}
 .card-actions{display:flex;gap:6px;margin-top:9px}.mini{width:auto;border:1px solid #443047;background:#100b11;color:#ddd;padding:6px 8px;font-size:11px}.mini.danger{border-color:#6e1423;color:#f18898}
 .media-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
 .media-card{position:relative;border:1px solid #2e1b31;background:#070507;min-height:110px;overflow:hidden;cursor:pointer}
@@ -159,6 +164,12 @@ textarea{min-height:95px;resize:vertical}.who-row{display:flex;gap:8px}.who{flex
         <input id="lngInput" type="number" step="any" placeholder="16.871">
       </div>
       <div class="full hint">Per posizionare con precisione la città: apri prima il paese, clicca sulla mappa nel punto desiderato e poi premi “Aggiungi posto”. Le coordinate verranno compilate.</div>
+      <div class="full">
+        <label class="favorite-toggle">
+          <input id="favoriteInput" type="checkbox">
+          <span>Posto preferito</span>
+        </label>
+      </div>
       <div class="full">
         <label>Note del posto / viaggio</label>
         <textarea id="notesInput" placeholder="Cosa avete fatto, dove siete stati, ricordi..."></textarea>
