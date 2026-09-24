@@ -1347,7 +1347,7 @@
             });
             galleryItems=items;
             renderGallery(items);
-        });
+        },error=>reportHomeIssue('Galleria',error));
         if(!document.getElementById('galleryDate').value){
             const now=new Date();
             const local=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
