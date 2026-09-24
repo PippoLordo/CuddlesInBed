@@ -16,7 +16,7 @@
 <style>
 :root{
   --bg:#050305;--panel:#0c080d;--panel2:#120b13;--line:#38213c;--text:#f4edf5;--muted:#a995ad;
-  --red:#b3132b;--purple:#6d1b7b;--grey:#555158;--black:#050505;
+  --red:#b3132b;--purple:#6d1b7b;--grey:#555158;--green:#123d2b;--ocean:#123d66;
   --display:"Cinzel Decorative",serif;--body:"Cormorant Garamond",serif;
 }
 *{box-sizing:border-box}
@@ -37,13 +37,13 @@ button{cursor:pointer}
 .map-actions{margin-left:auto;display:flex;gap:8px}
 .action{font-family:var(--display);font-size:10px;letter-spacing:.04em}
 .action.primary{border-color:#741f7d;background:#220d25}.action.red{border-color:#8f1628;background:#25090f}
-#worldMap{height:calc(100vh - 180px);min-height:560px;background:#030203}
-.leaflet-container{font-family:var(--body);background:#030203}
+#worldMap{height:calc(100vh - 180px);min-height:560px;background:var(--ocean)}
+.leaflet-container{font-family:var(--body);background:var(--ocean)}
 .leaflet-control-zoom a{background:#0d090e!important;color:#eee!important;border-color:#38213c!important}
 .country-tooltip{background:#09060a;color:#fff;border:1px solid #4d3152;box-shadow:none;font-family:var(--body);font-size:12px}
 .legend{padding:12px 15px;border-top:1px solid #28152b;display:flex;gap:16px;flex-wrap:wrap;color:#baadbd;font-size:12px}
 .legend-item{display:flex;align-items:center;gap:7px}
-.swatch{width:13px;height:13px;border:1px solid #b8abbc;display:inline-block}.swatch.grey{background:var(--grey)}.swatch.red{background:var(--red)}.swatch.purple{background:var(--purple)}.swatch.black{background:#000}
+.swatch{width:13px;height:13px;border:1px solid #b8abbc;display:inline-block}.swatch.grey{background:var(--grey)}.swatch.red{background:var(--red)}.swatch.purple{background:var(--purple)}.swatch.green{background:var(--green)}.swatch.ocean{background:var(--ocean)}
 .panel{min-height:600px;overflow:hidden}
 .panel-scroll{max-height:calc(100vh - 107px);overflow:auto;padding:18px}
 .panel-scroll::-webkit-scrollbar{width:8px}.panel-scroll::-webkit-scrollbar-thumb{background:linear-gradient(var(--red),var(--purple));border-radius:9px}
@@ -55,7 +55,7 @@ button{cursor:pointer}
 .section-title{font-family:var(--display);font-size:12px;letter-spacing:.08em;margin:22px 0 10px;padding-bottom:7px;border-bottom:1px solid #351b39}
 .visit-card,.note-card{border:1px solid #352038;background:#0c080d;padding:12px;margin-bottom:9px;cursor:pointer}
 .visit-card:hover{border-color:#72437b}
-.visit-card.cucci{border-left:4px solid var(--red)}.visit-card.cicci{border-left:4px solid var(--purple)}.visit-card.both{border-left:4px solid #000;box-shadow:inset 4px 0 #ddd}
+.visit-card.cucci{border-left:4px solid var(--red)}.visit-card.cicci{border-left:4px solid var(--purple)}.visit-card.both{border-left:4px solid var(--green);box-shadow:inset 4px 0 #8aa996}
 .visit-title{font-family:var(--display);font-size:12px}.visit-meta{font-size:12px;color:#b9aabb;margin-top:5px}.visit-note{margin-top:7px;line-height:1.35}
 .card-actions{display:flex;gap:6px;margin-top:9px}.mini{width:auto;border:1px solid #443047;background:#100b11;color:#ddd;padding:6px 8px;font-size:11px}.mini.danger{border-color:#6e1423;color:#f18898}
 .media-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
@@ -90,7 +90,7 @@ textarea{min-height:95px;resize:vertical}.who-row{display:flex;gap:8px}.who{flex
     <div class="map-head">
       <div>
         <h1>Il nostro mondo</h1>
-        <p>Il paese diventa nero appena avete visitato almeno una sua città o regione.</p>
+        <p>Il paese prende il colore di chi lo ha visitato: rosso Cucci, viola Cicci, verde scuro se ci siete stati entrambi.</p>
       </div>
       <div class="map-actions">
         <button class="action" onclick="showWorld()">Mondo</button>
@@ -99,8 +99,9 @@ textarea{min-height:95px;resize:vertical}.who-row{display:flex;gap:8px}.who{flex
     </div>
     <div id="worldMap"></div>
     <div class="legend">
+      <span class="legend-item"><i class="swatch ocean"></i> Mare</span>
       <span class="legend-item"><i class="swatch grey"></i> Non visitato</span>
-      <span class="legend-item"><i class="swatch black"></i> Paese visitato / entrambi</span>
+      <span class="legend-item"><i class="swatch green"></i> Visitato da entrambi</span>
       <span class="legend-item"><i class="swatch purple"></i> Solo Cicci</span>
       <span class="legend-item"><i class="swatch red"></i> Solo Cucci</span>
     </div>
