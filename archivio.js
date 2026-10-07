@@ -7,6 +7,7 @@ const COL={
 let shelves=[],books=[],chapters=[],pages=[],folders=[],files=[];
 let currentPageId=null,currentFolderId=null,currentArea="wiki",dirty=false,lastLoadedPageVersion=0;
 let entityMode=null,editingEntityId=null;
+let movingPageId=null,movingChapterId=null;
 
 function nowField(){return firebase.firestore.FieldValue.serverTimestamp()}
 function byOrder(a,b){return (a.order||0)-(b.order||0)||String(a.name||a.title||"").localeCompare(String(b.name||b.title||""),"it")}
@@ -94,9 +95,15 @@ function renderTree(){
 }
 function treeRow(kind,id,title,selected){
   const editable=kind!=="page";
+  const moveButton=kind==="chapter"
+    ? '<button class="tree-edit" onclick="event.stopPropagation();moveChapter(\''+id+'\')">Sposta</button>'
+    : kind==="page"
+      ? '<button class="tree-edit" onclick="event.stopPropagation();moveCurrentPage(\''+id+'\')">Sposta</button>'
+      : "";
   return '<div class="tree-row '+(selected?"selected":"")+'" onclick="selectTree(\''+kind+'\',\''+id+'\')">'+
     '<span class="tree-kind">'+({shelf:"Scaffale",book:"Libro",chapter:"Capitolo",page:"Pagina"}[kind])+'</span>'+
     '<span class="tree-title">'+escapeHtml(title||"Senza titolo")+'</span>'+
+    moveButton+
     (editable?'<button class="tree-edit" onclick="event.stopPropagation();editEntity(\''+kind+'\',\''+id+'\')">Edit</button>':"")+
   '</div>';
 }
@@ -109,7 +116,8 @@ function selectTree(kind,id){
   const title=obj.name||obj.title||"";
   const desc=obj.description||"";
   const home=document.getElementById("wikiHome");
-  home.innerHTML='<div class="empty-page"><div style="font-family:var(--display);font-size:10px;color:#a373ac;letter-spacing:.15em">'+({shelf:"SCAFFALE",book:"LIBRO",chapter:"CAPITOLO"}[kind])+'</div><h1>'+escapeHtml(title)+'</h1><p>'+escapeHtml(desc||"Nessuna descrizione.")+'</p><button class="btn primary" onclick="editEntity(\''+kind+'\',\''+id+'\')">Modifica</button></div>';
+  const moveAction=kind==="chapter"?'<button class="btn" style="margin-left:8px" onclick="moveChapter(\''+id+'\')">Sposta capitolo</button>':"";
+  home.innerHTML='<div class="empty-page"><div style="font-family:var(--display);font-size:10px;color:#a373ac;letter-spacing:.15em">'+({shelf:"SCAFFALE",book:"LIBRO",chapter:"CAPITOLO"}[kind])+'</div><h1>'+escapeHtml(title)+'</h1><p>'+escapeHtml(desc||"Nessuna descrizione.")+'</p><button class="btn primary" onclick="editEntity(\''+kind+'\',\''+id+'\')">Modifica</button>'+moveAction+'</div>';
   renderTree();
 }
 
@@ -211,9 +219,12 @@ function resetWikiHome(){
   const h=document.getElementById("wikiHome");h.classList.add("active");
   h.innerHTML='<div class="empty-page"><div style="font-family:var(--display);font-size:10px;color:#a373ac;letter-spacing:.15em">SPAZIO UNICO CONDIVISO</div><h1>La nostra biblioteca</h1><p>Scaffali, libri, capitoli e pagine sono gli stessi per entrambi. Cucci e Cicci possono creare e modificare qualsiasi contenuto.</p><div class="dashboard"><div class="stat"><strong id="shelfCount">'+shelves.length+'</strong><span>scaffali</span></div><div class="stat"><strong id="bookCount">'+books.length+'</strong><span>libri</span></div><div class="stat"><strong id="pageCount">'+pages.length+'</strong><span>pagine</span></div></div></div>';
 }
-function moveCurrentPage(){
-  const p=pages.find(x=>x.id===currentPageId);if(!p)return;
-  document.getElementById("moveBook").innerHTML=books.map(b=>'<option value="'+b.id+'">'+escapeHtml(b.title)+'</option>').join("");
+function moveCurrentPage(pageId=currentPageId){
+  const p=pages.find(x=>x.id===pageId);if(!p)return;
+  if(!books.length)return alert("Non ci sono libri disponibili.");
+  movingPageId=p.id;
+  document.getElementById("movePageTitle").textContent='Sposta pagina · '+(p.title||"Senza titolo");
+  document.getElementById("moveBook").innerHTML=books.slice().sort(byOrder).map(b=>'<option value="'+b.id+'">'+escapeHtml(b.title)+'</option>').join("");
   document.getElementById("moveBook").value=p.bookId||books[0]?.id||"";
   populateMoveChapters();
   document.getElementById("moveChapter").value=p.chapterId||"";
@@ -223,10 +234,65 @@ function populateMoveChapters(){
   const bookId=document.getElementById("moveBook").value;
   document.getElementById("moveChapter").innerHTML='<option value="">Senza capitolo</option>'+chapters.filter(c=>c.bookId===bookId).sort(byOrder).map(c=>'<option value="'+c.id+'">'+escapeHtml(c.title)+'</option>').join("");
 }
-function closeMoveModal(){document.getElementById("moveModal").classList.remove("open")}
+function closeMoveModal(){movingPageId=null;document.getElementById("moveModal").classList.remove("open")}
 async function confirmMovePage(){
-  if(!currentPageId)return;
-  try{await db.collection(COL.pages).doc(currentPageId).set({bookId:document.getElementById("moveBook").value,chapterId:document.getElementById("moveChapter").value||null,updatedBy:currentUsername,updatedAt:nowField()},{merge:true});closeMoveModal();show("Pagina spostata")}catch(e){alert(e.message)}
+  const p=pages.find(x=>x.id===movingPageId);if(!p)return;
+  const bookId=document.getElementById("moveBook").value;
+  const chapterId=document.getElementById("moveChapter").value||null;
+  if(!bookId)return alert("Scegli il libro di destinazione.");
+  try{
+    await db.collection(COL.pages).doc(p.id).set({
+      bookId,chapterId,order:Date.now(),updatedBy:currentUsername,updatedAt:nowField()
+    },{merge:true});
+    if(currentPageId===p.id){
+      const book=books.find(b=>b.id===bookId),chapter=chapters.find(c=>c.id===chapterId);
+      document.getElementById("pageMeta").textContent='Spostata in '+(book?.title||"libro")+(chapter?' · '+chapter.title:' · senza capitolo');
+    }
+    closeMoveModal();show("Pagina spostata");
+  }catch(e){alert("Errore nello spostamento: "+e.message)}
+}
+
+function moveChapter(id){
+  const c=chapters.find(x=>x.id===id);if(!c)return;
+  if(!books.length)return alert("Non ci sono libri disponibili.");
+  movingChapterId=id;
+  document.getElementById("moveChapterTitle").textContent='Sposta capitolo · '+(c.title||"Senza titolo");
+  document.getElementById("moveChapterBook").innerHTML=books.slice().sort(byOrder).map(b=>'<option value="'+b.id+'">'+escapeHtml(b.title)+'</option>').join("");
+  document.getElementById("moveChapterBook").value=c.bookId||books[0]?.id||"";
+  const count=pages.filter(p=>p.chapterId===id).length;
+  document.getElementById("moveChapterInfo").textContent=count
+    ? 'Verranno spostate insieme anche '+count+' '+(count===1?'pagina contenuta':'pagine contenute')+' nel capitolo.'
+    : 'Il capitolo non contiene pagine.';
+  document.getElementById("moveChapterModal").classList.add("open");
+}
+function closeMoveChapterModal(){movingChapterId=null;document.getElementById("moveChapterModal").classList.remove("open")}
+async function confirmMoveChapter(){
+  const c=chapters.find(x=>x.id===movingChapterId);if(!c)return;
+  const bookId=document.getElementById("moveChapterBook").value;
+  if(!bookId)return alert("Scegli il libro di destinazione.");
+  if(bookId===c.bookId){closeMoveChapterModal();show("Il capitolo è già in questo libro");return}
+  const contained=pages.filter(p=>p.chapterId===c.id);
+  try{
+    // Primo batch: capitolo + fino a 400 pagine. Gli eventuali blocchi successivi
+    // mantengono sincronizzato anche il bookId delle pagine contenute.
+    let offset=0,first=true;
+    do{
+      const batch=db.batch();
+      if(first){
+        batch.set(db.collection(COL.chapters).doc(c.id),{
+          bookId,order:Date.now(),updatedBy:currentUsername,updatedAt:nowField()
+        },{merge:true});
+      }
+      contained.slice(offset,offset+400).forEach(p=>{
+        batch.set(db.collection(COL.pages).doc(p.id),{
+          bookId,updatedBy:currentUsername,updatedAt:nowField()
+        },{merge:true});
+      });
+      await batch.commit();
+      first=false;offset+=400;
+    }while(offset<contained.length);
+    closeMoveChapterModal();show("Capitolo e pagine spostati");
+  }catch(e){alert("Errore nello spostamento del capitolo: "+e.message)}
 }
 async function showPageRevisions(){
   if(!currentPageId)return;
@@ -353,5 +419,5 @@ requireAuth(async function(){
 });
 document.addEventListener("keydown",e=>{
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"&&currentPageId){e.preventDefault();saveCurrentPage()}
-  if(e.key==="Escape"){closeEntityModal();closeMoveModal();closeRevisionModal()}
+  if(e.key==="Escape"){closeEntityModal();closeMoveModal();closeMoveChapterModal();closeRevisionModal()}
 });
