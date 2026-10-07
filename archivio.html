@@ -168,6 +168,8 @@ button{cursor:pointer}
         <div id="pageEditor" class="editor" contenteditable="true" spellcheck="true"></div>
         <div class="editor-actions">
           <button id="savePageBtn" class="btn primary" onclick="saveCurrentPage()">Salva pagina</button>
+          <button class="btn" onclick="reorderArchiveItem('page',currentPageId,-1)">Su</button>
+          <button class="btn" onclick="reorderArchiveItem('page',currentPageId,1)">Giù</button>
           <button class="btn" onclick="moveCurrentPage()">Sposta</button>
         </div>
       </div>

@@ -95,6 +95,10 @@ function renderTree(){
 }
 function treeRow(kind,id,title,selected){
   const editable=kind!=="page";
+  const reorderButtons=(kind==="chapter"||kind==="page")
+    ? '<button class="tree-edit" title="Sposta sopra" onclick="event.stopPropagation();reorderArchiveItem(\''+kind+'\',\''+id+'\',-1)">Su</button>'+
+      '<button class="tree-edit" title="Sposta sotto" onclick="event.stopPropagation();reorderArchiveItem(\''+kind+'\',\''+id+'\',1)">Giù</button>'
+    : "";
   const moveButton=kind==="chapter"
     ? '<button class="tree-edit" onclick="event.stopPropagation();moveChapter(\''+id+'\')">Sposta</button>'
     : kind==="page"
@@ -103,10 +107,58 @@ function treeRow(kind,id,title,selected){
   return '<div class="tree-row '+(selected?"selected":"")+'" onclick="selectTree(\''+kind+'\',\''+id+'\')">'+
     '<span class="tree-kind">'+({shelf:"Scaffale",book:"Libro",chapter:"Capitolo",page:"Pagina"}[kind])+'</span>'+
     '<span class="tree-title">'+escapeHtml(title||"Senza titolo")+'</span>'+
+    reorderButtons+
     moveButton+
     (editable?'<button class="tree-edit" onclick="event.stopPropagation();editEntity(\''+kind+'\',\''+id+'\')">Edit</button>':"")+
   '</div>';
 }
+async function persistArchiveOrder(collectionName,items){
+  for(let start=0;start<items.length;start+=400){
+    const batch=db.batch();
+    items.slice(start,start+400).forEach((item,index)=>{
+      batch.set(
+        db.collection(collectionName).doc(item.id),
+        {
+          order:(start+index+1)*1000,
+          updatedBy:currentUsername,
+          updatedAt:nowField()
+        },
+        {merge:true}
+      );
+    });
+    await batch.commit();
+  }
+}
+
+async function reorderArchiveItem(kind,id,direction){
+  if(direction!==-1&&direction!==1)return;
+  let siblings=[],collectionName="";
+  if(kind==="chapter"){
+    const item=chapters.find(c=>c.id===id);if(!item)return;
+    siblings=chapters.filter(c=>c.bookId===item.bookId).slice().sort(byOrder);
+    collectionName=COL.chapters;
+  }else if(kind==="page"){
+    const item=pages.find(p=>p.id===id);if(!item)return;
+    const chapterId=item.chapterId||null;
+    siblings=pages.filter(p=>p.bookId===item.bookId&&(p.chapterId||null)===chapterId).slice().sort(byOrder);
+    collectionName=COL.pages;
+  }else return;
+
+  const index=siblings.findIndex(item=>item.id===id);
+  if(index<0)return;
+  const target=index+direction;
+  if(target<0){show(kind==="chapter"?"Il capitolo è già in cima":"La pagina è già in cima");return}
+  if(target>=siblings.length){show(kind==="chapter"?"Il capitolo è già in fondo":"La pagina è già in fondo");return}
+
+  [siblings[index],siblings[target]]=[siblings[target],siblings[index]];
+  try{
+    await persistArchiveOrder(collectionName,siblings);
+    show(kind==="chapter"?(direction<0?"Capitolo spostato sopra":"Capitolo spostato sotto"):(direction<0?"Pagina spostata sopra":"Pagina spostata sotto"));
+  }catch(e){
+    alert("Errore nel riordinamento: "+e.message);
+  }
+}
+
 function selectTree(kind,id){
   if(kind==="page"){openPage(id);return}
   const obj=kind==="shelf"?shelves.find(x=>x.id===id):kind==="book"?books.find(x=>x.id===id):chapters.find(x=>x.id===id);
@@ -116,7 +168,11 @@ function selectTree(kind,id){
   const title=obj.name||obj.title||"";
   const desc=obj.description||"";
   const home=document.getElementById("wikiHome");
-  const moveAction=kind==="chapter"?'<button class="btn" style="margin-left:8px" onclick="moveChapter(\''+id+'\')">Sposta capitolo</button>':"";
+  const moveAction=kind==="chapter"
+    ? '<button class="btn" style="margin-left:8px" onclick="reorderArchiveItem(\'chapter\',\''+id+'\',-1)">Su</button>'+
+      '<button class="btn" style="margin-left:8px" onclick="reorderArchiveItem(\'chapter\',\''+id+'\',1)">Giù</button>'+
+      '<button class="btn" style="margin-left:8px" onclick="moveChapter(\''+id+'\')">Sposta capitolo</button>'
+    : "";
   home.innerHTML='<div class="empty-page"><div style="font-family:var(--display);font-size:10px;color:#a373ac;letter-spacing:.15em">'+({shelf:"SCAFFALE",book:"LIBRO",chapter:"CAPITOLO"}[kind])+'</div><h1>'+escapeHtml(title)+'</h1><p>'+escapeHtml(desc||"Nessuna descrizione.")+'</p><button class="btn primary" onclick="editEntity(\''+kind+'\',\''+id+'\')">Modifica</button>'+moveAction+'</div>';
   renderTree();
 }
@@ -215,6 +271,11 @@ async function deleteCurrentPage(){
   const p=pages.find(x=>x.id===currentPageId);if(!p||!confirm("Eliminare questa pagina?"))return;
   try{await db.collection(COL.pages).doc(p.id).delete();currentPageId=null;document.getElementById("pageView").classList.remove("active");resetWikiHome();show("Pagina eliminata")}catch(e){alert(e.message)}
 }
+function nextArchiveOrder(items){
+  if(!items.length)return 1000;
+  const values=items.map(x=>Number(x.order)||0);
+  return Math.max(...values,0)+1000;
+}
 function resetWikiHome(){
   const h=document.getElementById("wikiHome");h.classList.add("active");
   h.innerHTML='<div class="empty-page"><div style="font-family:var(--display);font-size:10px;color:#a373ac;letter-spacing:.15em">SPAZIO UNICO CONDIVISO</div><h1>La nostra biblioteca</h1><p>Scaffali, libri, capitoli e pagine sono gli stessi per entrambi. Cucci e Cicci possono creare e modificare qualsiasi contenuto.</p><div class="dashboard"><div class="stat"><strong id="shelfCount">'+shelves.length+'</strong><span>scaffali</span></div><div class="stat"><strong id="bookCount">'+books.length+'</strong><span>libri</span></div><div class="stat"><strong id="pageCount">'+pages.length+'</strong><span>pagine</span></div></div></div>';
@@ -242,7 +303,7 @@ async function confirmMovePage(){
   if(!bookId)return alert("Scegli il libro di destinazione.");
   try{
     await db.collection(COL.pages).doc(p.id).set({
-      bookId,chapterId,order:Date.now(),updatedBy:currentUsername,updatedAt:nowField()
+      bookId,chapterId,order:nextArchiveOrder(pages.filter(x=>x.id!==p.id&&x.bookId===bookId&&(x.chapterId||null)===(chapterId||null))),updatedBy:currentUsername,updatedAt:nowField()
     },{merge:true});
     if(currentPageId===p.id){
       const book=books.find(b=>b.id===bookId),chapter=chapters.find(c=>c.id===chapterId);
@@ -280,7 +341,7 @@ async function confirmMoveChapter(){
       const batch=db.batch();
       if(first){
         batch.set(db.collection(COL.chapters).doc(c.id),{
-          bookId,order:Date.now(),updatedBy:currentUsername,updatedAt:nowField()
+          bookId,order:nextArchiveOrder(chapters.filter(x=>x.id!==c.id&&x.bookId===bookId)),updatedBy:currentUsername,updatedAt:nowField()
         },{merge:true});
       }
       contained.slice(offset,offset+400).forEach(p=>{
