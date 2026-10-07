@@ -210,12 +210,29 @@ button{cursor:pointer}
 
 <div id="moveModal" class="modal">
   <div class="modal-card">
-    <h3>Sposta pagina</h3>
+    <h3 id="movePageTitle">Sposta pagina</h3>
     <div class="form-row"><label>Libro</label><select id="moveBook" onchange="populateMoveChapters()"></select></div>
     <div class="form-row"><label>Capitolo</label><select id="moveChapter"></select></div>
     <div class="modal-actions">
       <button class="btn primary" onclick="confirmMovePage()">Sposta</button>
       <button class="btn" onclick="closeMoveModal()">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<div id="moveChapterModal" class="modal">
+  <div class="modal-card">
+    <h3 id="moveChapterTitle">Sposta capitolo</h3>
+    <div class="form-row">
+      <label>Libro di destinazione</label>
+      <select id="moveChapterBook"></select>
+    </div>
+    <div class="form-row">
+      <div id="moveChapterInfo" style="font-size:12px;color:#a995ad;line-height:1.45"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" onclick="confirmMoveChapter()">Sposta capitolo</button>
+      <button class="btn" onclick="closeMoveChapterModal()">Annulla</button>
     </div>
   </div>
 </div>
