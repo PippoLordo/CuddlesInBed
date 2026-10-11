@@ -146,7 +146,7 @@ async function reorderArchiveItem(kind,id,direction){
     const item=pages.find(p=>p.id===id);if(!item)return;
     if(isBookIndexPage(item)){show("La pagina indice resta sempre in cima al libro");return}
     const chapterId=item.chapterId||null;
-    siblings=pages.filter(p=>p.bookId===item.bookId&&(p.chapterId||null)===chapterId).slice().sort(byOrder);
+    siblings=pages.filter(p=>p.bookId===item.bookId&&(p.chapterId||null)===chapterId&&!isBookIndexPage(p)).slice().sort(byOrder);
     collectionName=COL.pages;
   }else return;
 
@@ -236,7 +236,8 @@ async function createBookIndexPage(bookId,title="Indice",contentHtml="<h1>Indice
   if(!bookId)return null;
   const existing=bookIndexPage(bookId);
   if(existing)return existing.id;
-  const ref=await db.collection(COL.pages).add({
+  const ref=db.collection(COL.pages).doc("book-index-"+bookId);
+  await ref.set({
     title,
     contentHtml,
     bookId,
@@ -247,7 +248,7 @@ async function createBookIndexPage(bookId,title="Indice",contentHtml="<h1>Indice
     createdAt:nowField(),
     updatedBy:currentUsername,
     updatedAt:nowField()
-  });
+  },{merge:true});
   return ref.id;
 }
 
@@ -367,7 +368,7 @@ async function confirmMovePage(){
   if(!bookId)return alert("Scegli il libro di destinazione.");
   try{
     await db.collection(COL.pages).doc(p.id).set({
-      bookId,chapterId,order:nextArchiveOrder(pages.filter(x=>x.id!==p.id&&x.bookId===bookId&&(x.chapterId||null)===(chapterId||null))),updatedBy:currentUsername,updatedAt:nowField()
+      bookId,chapterId,order:nextArchiveOrder(pages.filter(x=>x.id!==p.id&&x.bookId===bookId&&(x.chapterId||null)===(chapterId||null)&&!isBookIndexPage(x))),updatedBy:currentUsername,updatedAt:nowField()
     },{merge:true});
     if(currentPageId===p.id){
       const book=books.find(b=>b.id===bookId),chapter=chapters.find(c=>c.id===chapterId);
@@ -541,16 +542,23 @@ function handlePagesSnapshot(next){
   }
 }
 requireAuth(async function(){
-  let indexSyncTimer=null;
+  let indexSyncTimer=null,booksReady=false,pagesReady=false,indexSyncRunning=false;
   const scheduleIndexSync=()=>{
+    if(!booksReady||!pagesReady||indexSyncRunning)return;
     clearTimeout(indexSyncTimer);
-    indexSyncTimer=setTimeout(()=>ensureBookIndexPages().catch(e=>workspaceError("Pagine indice",e)),250);
+    indexSyncTimer=setTimeout(async()=>{
+      if(indexSyncRunning)return;
+      indexSyncRunning=true;
+      try{await ensureBookIndexPages()}
+      catch(e){workspaceError("Pagine indice",e)}
+      finally{indexSyncRunning=false}
+    },250);
   };
   subscribeCollection(COL.shelves,v=>shelves=v);
-  subscribeCollection(COL.books,v=>{books=v;scheduleIndexSync()});
+  subscribeCollection(COL.books,v=>{books=v;booksReady=true;scheduleIndexSync()});
   subscribeCollection(COL.chapters,v=>chapters=v);
   db.collection(COL.pages).onSnapshot(
-    s=>{handlePagesSnapshot(s.docs.map(d=>({id:d.id,...d.data()})));renderTree();scheduleIndexSync()},
+    s=>{handlePagesSnapshot(s.docs.map(d=>({id:d.id,...d.data()})));pagesReady=true;renderTree();scheduleIndexSync()},
     e=>workspaceError("Pagine condivise",e)
   );
   subscribeCollection(COL.folders,v=>folders=v);
