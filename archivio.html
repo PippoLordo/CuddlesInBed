@@ -150,7 +150,7 @@ button{cursor:pointer}
         <div class="page-head">
           <input id="pageTitle" class="page-title-input" placeholder="Titolo pagina">
           <button class="btn" onclick="showPageRevisions()">Cronologia</button>
-          <button class="btn" onclick="deleteCurrentPage()">Elimina</button>
+          <button id="deletePageBtn" class="btn" onclick="deleteCurrentPage()">Elimina</button>
         </div>
         <div id="pageMeta" class="page-meta"></div>
         <div class="toolbar">
@@ -168,9 +168,9 @@ button{cursor:pointer}
         <div id="pageEditor" class="editor" contenteditable="true" spellcheck="true"></div>
         <div class="editor-actions">
           <button id="savePageBtn" class="btn primary" onclick="saveCurrentPage()">Salva pagina</button>
-          <button class="btn" onclick="reorderArchiveItem('page',currentPageId,-1)">Su</button>
-          <button class="btn" onclick="reorderArchiveItem('page',currentPageId,1)">Giù</button>
-          <button class="btn" onclick="moveCurrentPage()">Sposta</button>
+          <button id="pageUpBtn" class="btn" onclick="reorderArchiveItem('page',currentPageId,-1)">Su</button>
+          <button id="pageDownBtn" class="btn" onclick="reorderArchiveItem('page',currentPageId,1)">Giù</button>
+          <button id="movePageBtn" class="btn" onclick="moveCurrentPage()">Sposta</button>
         </div>
       </div>
     </div>
