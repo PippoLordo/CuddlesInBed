@@ -32,6 +32,8 @@ function humanBytes(n=0){
   if(n<1073741824)return (n/1048576).toFixed(1)+" MB";return (n/1073741824).toFixed(2)+" GB";
 }
 function labelUser(u){return u==="cucci"?"Cucci":u==="cicci"?"Cicci":u||"—"}
+function isBookIndexPage(page){return page?.isBookIndex===true}
+function bookIndexPage(bookId){return pages.find(p=>p.bookId===bookId&&isBookIndexPage(p))||null}
 function show(msg){showToast(msg)}
 function workspaceError(label,error){
   console.error(label,error);
@@ -74,11 +76,13 @@ function renderTree(){
     return '<div class="tree-node">'+treeRow("shelf",s.id,s.name,currentPageId===("shelf:"+s.id))+
       '<div class="children">'+sb.map(b=>{
         const bc=chapters.filter(c=>c.bookId===b.id).sort(byOrder);
-        const loose=pages.filter(p=>p.bookId===b.id&&!p.chapterId&&(!q||pageMatches.has(p.id))).sort(byOrder);
-        const bookVisible=!q||bookMatches.has(b.id)||String(b.title||"").toLowerCase().includes(q);
+        const indexPage=bookIndexPage(b.id);
+        const loose=pages.filter(p=>p.bookId===b.id&&!p.chapterId&&!isBookIndexPage(p)&&(!q||pageMatches.has(p.id))).sort(byOrder);
+        const bookVisible=!q||bookMatches.has(b.id)||String(b.title||"").toLowerCase().includes(q)||(indexPage&&pageMatches.has(indexPage.id));
         if(!bookVisible)return "";
         return '<div class="tree-node">'+treeRow("book",b.id,b.title,false)+
           '<div class="children">'+
+          (indexPage&&(!q||pageMatches.has(indexPage.id)||String(b.title||"").toLowerCase().includes(q))?treeRow("index",indexPage.id,indexPage.title,indexPage.id===currentPageId):"")+
           bc.map(c=>{
             const cp=pages.filter(p=>p.chapterId===c.id&&(!q||pageMatches.has(p.id))).sort(byOrder);
             if(q&&!chapterMatches.has(c.id)&&!cp.length)return "";
@@ -94,7 +98,8 @@ function renderTree(){
   document.getElementById("pageCount").textContent=pages.length;
 }
 function treeRow(kind,id,title,selected){
-  const editable=kind!=="page";
+  const isIndex=kind==="index";
+  const editable=kind!=="page"&&!isIndex;
   const reorderButtons=(kind==="chapter"||kind==="page")
     ? '<button class="tree-edit" title="Sposta sopra" onclick="event.stopPropagation();reorderArchiveItem(\''+kind+'\',\''+id+'\',-1)">Su</button>'+
       '<button class="tree-edit" title="Sposta sotto" onclick="event.stopPropagation();reorderArchiveItem(\''+kind+'\',\''+id+'\',1)">Giù</button>'
@@ -105,7 +110,7 @@ function treeRow(kind,id,title,selected){
       ? '<button class="tree-edit" onclick="event.stopPropagation();moveCurrentPage(\''+id+'\')">Sposta</button>'
       : "";
   return '<div class="tree-row '+(selected?"selected":"")+'" onclick="selectTree(\''+kind+'\',\''+id+'\')">'+
-    '<span class="tree-kind">'+({shelf:"Scaffale",book:"Libro",chapter:"Capitolo",page:"Pagina"}[kind])+'</span>'+
+    '<span class="tree-kind">'+({shelf:"Scaffale",book:"Libro",chapter:"Capitolo",page:"Pagina",index:"Indice"}[kind])+'</span>'+
     '<span class="tree-title">'+escapeHtml(title||"Senza titolo")+'</span>'+
     reorderButtons+
     moveButton+
@@ -139,6 +144,7 @@ async function reorderArchiveItem(kind,id,direction){
     collectionName=COL.chapters;
   }else if(kind==="page"){
     const item=pages.find(p=>p.id===id);if(!item)return;
+    if(isBookIndexPage(item)){show("La pagina indice resta sempre in cima al libro");return}
     const chapterId=item.chapterId||null;
     siblings=pages.filter(p=>p.bookId===item.bookId&&(p.chapterId||null)===chapterId).slice().sort(byOrder);
     collectionName=COL.pages;
@@ -160,7 +166,7 @@ async function reorderArchiveItem(kind,id,direction){
 }
 
 function selectTree(kind,id){
-  if(kind==="page"){openPage(id);return}
+  if(kind==="page"||kind==="index"){openPage(id);return}
   const obj=kind==="shelf"?shelves.find(x=>x.id===id):kind==="book"?books.find(x=>x.id===id):chapters.find(x=>x.id===id);
   if(!obj)return;
   document.getElementById("wikiHome").classList.add("active");document.getElementById("pageView").classList.remove("active");
@@ -215,10 +221,60 @@ async function saveEntity(){
   if(entityMode==="chapter"){const bookId=document.getElementById("entityBook").value;if(!bookId)return alert("Crea prima un libro.");coll=COL.chapters;payload={title:name,description,bookId}}
   payload.updatedAt=nowField();payload.updatedBy=currentUsername;
   try{
-    if(editingEntityId)await db.collection(coll).doc(editingEntityId).set(payload,{merge:true});
-    else{payload.createdAt=nowField();payload.createdBy=currentUsername;payload.order=Date.now();await db.collection(coll).add(payload)}
+    if(editingEntityId){
+      await db.collection(coll).doc(editingEntityId).set(payload,{merge:true});
+    }else{
+      payload.createdAt=nowField();payload.createdBy=currentUsername;payload.order=Date.now();
+      const ref=await db.collection(coll).add(payload);
+      if(entityMode==="book") await createBookIndexPage(ref.id);
+    }
     closeEntityModal();show("Salvato");
   }catch(e){alert("Errore: "+e.message)}
+}
+
+async function createBookIndexPage(bookId,title="Indice",contentHtml="<h1>Indice</h1><p>Questa è la pagina iniziale del libro.</p>"){
+  if(!bookId)return null;
+  const existing=bookIndexPage(bookId);
+  if(existing)return existing.id;
+  const ref=await db.collection(COL.pages).add({
+    title,
+    contentHtml,
+    bookId,
+    chapterId:null,
+    isBookIndex:true,
+    order:-1000000,
+    createdBy:currentUsername,
+    createdAt:nowField(),
+    updatedBy:currentUsername,
+    updatedAt:nowField()
+  });
+  return ref.id;
+}
+
+async function ensureBookIndexPages(){
+  for(const book of books){
+    if(bookIndexPage(book.id))continue;
+
+    // Riusa un'eventuale pagina "Indice" già esistente nel libro.
+    const oldIndex=pages.find(p=>
+      p.bookId===book.id &&
+      !p.chapterId &&
+      !isBookIndexPage(p) &&
+      String(p.title||"").trim().toLocaleLowerCase("it-IT")==="indice"
+    );
+
+    if(oldIndex){
+      await db.collection(COL.pages).doc(oldIndex.id).set({
+        isBookIndex:true,
+        chapterId:null,
+        order:-1000000,
+        updatedBy:currentUsername,
+        updatedAt:nowField()
+      },{merge:true});
+    }else{
+      await createBookIndexPage(book.id);
+    }
+  }
 }
 
 function defaultBookId(){
@@ -230,7 +286,7 @@ async function newPage(){
   const bookId=defaultBookId();
   try{
     const ref=await db.collection(COL.pages).add({
-      title:"Nuova pagina",contentHtml:"<p>Inizia a scrivere qui...</p>",bookId,chapterId:null,order:Date.now(),
+      title:"Nuova pagina",contentHtml:"<p>Inizia a scrivere qui...</p>",bookId,chapterId:null,isBookIndex:false,order:Date.now(),
       createdBy:currentUsername,createdAt:nowField(),updatedBy:currentUsername,updatedAt:nowField()
     });
     setTimeout(()=>openPage(ref.id),150);
@@ -242,7 +298,11 @@ function openPage(id){
   document.getElementById("wikiHome").classList.remove("active");document.getElementById("pageView").classList.add("active");
   document.getElementById("pageTitle").value=p.title||"";
   document.getElementById("pageEditor").innerHTML=cleanHtml(p.contentHtml||"");
-  document.getElementById("pageMeta").textContent="Ultima modifica: "+fmtTime(p.updatedAt)+" · "+labelUser(p.updatedBy);
+  const fixed=isBookIndexPage(p);
+  document.getElementById("pageMeta").textContent=(fixed?"Pagina indice fissa · ":"")+"Ultima modifica: "+fmtTime(p.updatedAt)+" · "+labelUser(p.updatedBy);
+  ["deletePageBtn","pageUpBtn","pageDownBtn","movePageBtn"].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display=fixed?"none":"";
+  });
   document.getElementById("syncWarning").style.display="none";
   renderTree();
 }
@@ -268,7 +328,9 @@ async function saveCurrentPage(){
   finally{btn.disabled=false;btn.textContent="Salva pagina"}
 }
 async function deleteCurrentPage(){
-  const p=pages.find(x=>x.id===currentPageId);if(!p||!confirm("Eliminare questa pagina?"))return;
+  const p=pages.find(x=>x.id===currentPageId);if(!p)return;
+  if(isBookIndexPage(p)){show("La pagina indice non può essere eliminata");return}
+  if(!confirm("Eliminare questa pagina?"))return;
   try{await db.collection(COL.pages).doc(p.id).delete();currentPageId=null;document.getElementById("pageView").classList.remove("active");resetWikiHome();show("Pagina eliminata")}catch(e){alert(e.message)}
 }
 function nextArchiveOrder(items){
@@ -282,6 +344,7 @@ function resetWikiHome(){
 }
 function moveCurrentPage(pageId=currentPageId){
   const p=pages.find(x=>x.id===pageId);if(!p)return;
+  if(isBookIndexPage(p)){show("La pagina indice resta sempre nel suo libro");return}
   if(!books.length)return alert("Non ci sono libri disponibili.");
   movingPageId=p.id;
   document.getElementById("movePageTitle").textContent='Sposta pagina · '+(p.title||"Senza titolo");
@@ -298,6 +361,7 @@ function populateMoveChapters(){
 function closeMoveModal(){movingPageId=null;document.getElementById("moveModal").classList.remove("open")}
 async function confirmMovePage(){
   const p=pages.find(x=>x.id===movingPageId);if(!p)return;
+  if(isBookIndexPage(p)){closeMoveModal();show("La pagina indice non può essere spostata");return}
   const bookId=document.getElementById("moveBook").value;
   const chapterId=document.getElementById("moveChapter").value||null;
   if(!bookId)return alert("Scegli il libro di destinazione.");
@@ -366,7 +430,17 @@ function closeRevisionModal(){document.getElementById("revisionModal").classList
 async function restoreRevision(id){
   const d=await db.collection(COL.revisions).doc(id).get();if(!d.exists||!currentPageId)return;const r=d.data();
   if(!confirm("Ripristinare questa versione?"))return;
-  await db.collection(COL.pages).doc(currentPageId).set({title:r.title||"Senza titolo",contentHtml:r.contentHtml||"",bookId:r.bookId,chapterId:r.chapterId||null,updatedBy:currentUsername,updatedAt:nowField()},{merge:true});
+  const current=pages.find(p=>p.id===currentPageId);
+  const fixed=isBookIndexPage(current);
+  await db.collection(COL.pages).doc(currentPageId).set({
+    title:r.title||"Senza titolo",
+    contentHtml:r.contentHtml||"",
+    bookId:fixed?current.bookId:r.bookId,
+    chapterId:fixed?null:(r.chapterId||null),
+    isBookIndex:fixed?true:(current?.isBookIndex===true),
+    updatedBy:currentUsername,
+    updatedAt:nowField()
+  },{merge:true});
   closeRevisionModal();show("Versione ripristinata");
 }
 
@@ -467,11 +541,16 @@ function handlePagesSnapshot(next){
   }
 }
 requireAuth(async function(){
+  let indexSyncTimer=null;
+  const scheduleIndexSync=()=>{
+    clearTimeout(indexSyncTimer);
+    indexSyncTimer=setTimeout(()=>ensureBookIndexPages().catch(e=>workspaceError("Pagine indice",e)),250);
+  };
   subscribeCollection(COL.shelves,v=>shelves=v);
-  subscribeCollection(COL.books,v=>books=v);
+  subscribeCollection(COL.books,v=>{books=v;scheduleIndexSync()});
   subscribeCollection(COL.chapters,v=>chapters=v);
   db.collection(COL.pages).onSnapshot(
-    s=>{handlePagesSnapshot(s.docs.map(d=>({id:d.id,...d.data()})));renderTree()},
+    s=>{handlePagesSnapshot(s.docs.map(d=>({id:d.id,...d.data()})));renderTree();scheduleIndexSync()},
     e=>workspaceError("Pagine condivise",e)
   );
   subscribeCollection(COL.folders,v=>folders=v);
